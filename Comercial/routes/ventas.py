@@ -1,41 +1,37 @@
-# Comercial/routes/ventas.py
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
 from app import db
-from models.ventas import Venta
-from models.clientes import Cliente
-from services.emailService import enviar_comprobante_email
-from datetime import datetime
-import requests
-import os
+from models.venta import Venta
 
-ventas_bp = Blueprint('ventas', __name__, template_folder='../templates')
+ventas_bp = Blueprint('ventas', __name__)
 
-INVENTARIO_URL = os.getenv('INVENTARIO_URL', 'http://localhost:8002')
+@ventas_bp.route('/ventas/nueva', methods=['GET', 'POST'])
+def nueva_venta():
+    if request.method == 'POST':
+        venta = Venta(
+            vendedor_id=session.get('usuario_id'),
+            cliente_email=request.form.get('cliente_email'),
+            cliente_nombres=request.form.get('cliente_nombres'),
+            cliente_apellidos=request.form.get('cliente_apellidos'),
+            cliente_documento=request.form.get('cliente_documento'),
+            cliente_razon_social=request.form.get('cliente_razon_social'),
+            cliente_direccion_fiscal=request.form.get('factura_direccion'),
+            producto_nombre=request.form.get('producto_nombre'),
+            cantidad=request.form.get('cantidad'),
+            precio_unitario=request.form.get('precio'),
+            total_venta=float(request.form.get('precio')) * int(request.form.get('cantidad')),
+            tipo_comprobante=request.form.get('tipo_comprobante', 'boleta')
+        )
+        db.session.add(venta)
+        db.session.commit()
+        return redirect(url_for('comprobante', venta_id=venta.id))
+    return render_template('ventas_form.html')
 
-@ventas_bp.route("/")
-def ver_ventas():
-    """Listar ventas del cliente"""
-    ventas = Venta.query.filter_by(cliente_id=session.get("cliente_id")).order_by(Venta.fecha_venta.desc()).all()
-    return render_template("ventas_cliente.html", ventas=ventas)
+@ventas_bp.route('/ventas')
+def listar_ventas():
+    ventas = Venta.query.all()
+    return render_template('ventas.html', ventas=ventas)
 
-@ventas_bp.route("/comprobante/<int:venta_id>")
-def ver_comprobante(venta_id):
-    """Ver comprobante de una venta"""
+@ventas_bp.route('/comprobante/<int:venta_id>')
+def comprobante(venta_id):
     venta = Venta.query.get_or_404(venta_id)
-
-    if venta.cliente_id != session.get("cliente_id"):
-        flash("❌ No tienes permiso para ver este comprobante", "danger")
-        return redirect(url_for("ventas.ver_ventas"))
-    
-    try:
-        response = requests.get(f"{INVENTARIO_URL}/api/productos/{venta.producto_id}", timeout=5)
-        if response.status_code == 200:
-            producto = response.json()
-        else:
-            producto = {"nombre": f"Producto #{venta.producto_id}", "precio": 0}
-    except:
-        producto = {"nombre": f"Producto #{venta.producto_id}", "precio": 0}
-    
-    total = venta.cantidad * float(producto.get("precio", 0))
-    
-    return render_template("comprobante.html", venta=venta, producto=producto, total=total)
+    return render_template('comprobante.html', venta=venta)

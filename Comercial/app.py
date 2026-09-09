@@ -1,18 +1,15 @@
 import os
 from flask import Flask, render_template, session, redirect, url_for, request
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_cors import CORS
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
-load_dotenv()
+# Importar las instancias desde extensions.py
+from extensions import db, login_manager, cors
 
-# Inicializar extensiones fuera de create_app
-db = SQLAlchemy()
-login_manager = LoginManager()
-cors = CORS()
+load_dotenv()
 
 def create_app():
     app = Flask(__name__, template_folder='templates')
@@ -25,15 +22,7 @@ def create_app():
     )
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
-    # Configuración de correo
-    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
-    app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
-    app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True') == 'True'
-    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
-    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
-    
-    # Inicializar extensiones con la app
+    # Inicializar extensiones
     db.init_app(app)
     login_manager.init_app(app)
     cors.init_app(app)
@@ -41,7 +30,9 @@ def create_app():
     # Configurar login
     login_manager.login_view = 'admin.login'
     
-    # Registrar blueprints DESPUÉS de que db esté inicializado
+    # =============================================
+    # IMPORTAR BLUEPRINTS (AHORA SÍ FUNCIONA)
+    # =============================================
     from routes.cliente import cliente_bp
     from routes.pedidos import pedidos_bp
     from routes.ventas import ventas_bp
@@ -63,17 +54,18 @@ def create_app():
     
     @app.route('/catalogo')
     def catalogo():
-        # Aquí se consumiría la API de inventario
         return render_template('catalogo_cliente.html')
     
     @app.route('/health')
     def health():
         return {"status": "ok", "service": "comercial"}, 200
     
-    # Crear tablas automáticamente
+    # =============================================
+    # CREAR TABLAS Y USUARIO ADMIN
+    # =============================================
     with app.app_context():
         db.create_all()
-        # Crear admin por defecto si no existe
+        
         from models.usuarioSistema import UsuarioSistema
         if not UsuarioSistema.query.filter_by(correo='admin@admin.com').first():
             admin = UsuarioSistema(
