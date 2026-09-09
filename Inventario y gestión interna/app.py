@@ -1,150 +1,132 @@
-# microservicio-inventario/app.py
 import os
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, session, redirect, url_for, request
 from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
-from functools import wraps
-from datetime import datetime, timedelta
-from sqlalchemy import func, text
-import secrets
+from flask_login import LoginManager
+from flask_cors import CORS
 from dotenv import load_dotenv
+from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 
-app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "clave_secreta_inventario")
+db = SQLAlchemy()
+login_manager = LoginManager()
+cors = CORS()
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://librospe:75535870@mysql-librospe.alwaysdata.net/librospe_db"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"connect_args": {"ssl": {"ssl_mode": "REQUIRED"}}}
+def create_app():
+    app = Flask(__name__, template_folder='templates')
+    
+    # Configuración
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+    app.config['SQLALCHEMY_DATABASE_URI'] = (
+        f"mysql+pymysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}"
+        f"@{os.getenv('MYSQL_HOST')}:{os.getenv('MYSQL_PORT')}/{os.getenv('MYSQL_DATABASE')}"
+    )
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    # Inicializar extensiones
+    db.init_app(app)
+    login_manager.init_app(app)
+    cors.init_app(app)
+    
+    # Configurar login
+    login_manager.login_view = 'usuario.login'
+    
+    # Importar modelos para que SQLAlchemy los conozca
+    from models.categoria import Categoria
+    from models.producto import Producto
+    from models.proveedor import Proveedor
+    from models.usuarioSistema import UsuarioSistema
+    
+    # Registrar blueprints
+    from routes.producto import producto_bp
+    from routes.proveedores import proveedores_bp
+    from routes.bloqueos import bloqueos_bp
+    from routes.usuario import usuario_bp
+    
+    app.register_blueprint(producto_bp)
+    app.register_blueprint(proveedores_bp)
+    app.register_blueprint(bloqueos_bp)
+    app.register_blueprint(usuario_bp)
+    
+    # ======================================
+    # RUTAS AUXILIARES (Login y Panel)
+    # ======================================
+    @app.route('/login', methods=['GET', 'POST'])
+    def login():
+        if request.method == 'POST':
+            correo = request.form.get('correo')
+            clave = request.form.get('clave')
+            usuario = UsuarioSistema.query.filter_by(correo=correo).first()
+            
+            if usuario and check_password_hash(usuario.clave, clave):
+                session['usuario_id'] = usuario.id
+                session['nombre'] = usuario.nombres
+                session['rol'] = usuario.rol
+                return redirect(url_for('dashboard'))
+            else:
+                return render_template('login.html', error="Credenciales incorrectas")
+        
+        return render_template('login.html')
 
-db = SQLAlchemy(app)
-bcrypt = Bcrypt(app)
+    @app.route('/logout')
+    def logout():
+        session.clear()
+        return redirect(url_for('login'))
 
+    @app.route('/')
+    def dashboard():
+        if 'usuario_id' not in session:
+            return redirect(url_for('login'))
+        
+        total_productos = Producto.query.count()
+        stock_bajo = Producto.query.filter(Producto.cantidad <= 5, Producto.cantidad > 0).all()
+        stock_critico = Producto.query.filter(Producto.cantidad == 0).all()
+        total_proveedores = Proveedor.query.count()
+        
+        return render_template(
+            'dashboard.html',
+            total_ventas_hoy=0,
+            cantidad_ventas_hoy=0,
+            total_ventas_mes=0,
+            cantidad_ventas_mes=0,
+            pedidos_pendientes=0,
+            pedidos_en_proceso=0,
+            total_clientes=0,
+            clientes_nuevos=0,
+            stock_bajo=stock_bajo,
+            stock_critico=stock_critico,
+            total_productos=total_productos,
+            total_proveedores=total_proveedores,
+            top_productos=[],
+            graph_ventas={"data": [], "layout": {}},
+            graph_top={"data": [], "layout": {}},
+            graph_cat={"data": [], "layout": {}},
+            graph_estados={"data": [], "layout": {}},
+            ahora_peru=__import__('datetime').datetime.now()
+        )
 
+    @app.route('/health')
+    def health():
+        return {"status": "ok", "service": "inventario"}, 200
 
-class Producto(db.Model):
-    __tablename__ = "productos"
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(150), nullable=False)
-    descripcion = db.Column(db.Text)
-    cantidad = db.Column(db.Integer, default=0)
-    proveedor_id = db.Column(db.Integer, db.ForeignKey("proveedores.id"), nullable=True)
-    precio = db.Column(db.Numeric(10,2), default=0.0)
-    imagen = db.Column(db.String(255))
-    destacado = db.Column(db.Integer, default=0)
-    precio_oferta = db.Column(db.Numeric(10,2), nullable=True)
-    codigo_barras = db.Column(db.String(50), nullable=True)
-    id_categoria = db.Column(db.Integer, db.ForeignKey("categorias.id_categoria"), nullable=True)
-    proveedor = db.relationship("Proveedor", back_populates="productos")
-    categoria_rel = db.relationship("Categoria", back_populates="productos")
+    # Crear tablas automáticamente
+    with app.app_context():
+        db.create_all()
+        # Crear usuario admin por defecto si no existe
+        if not UsuarioSistema.query.filter_by(correo='admin@admin.com').first():
+            admin = UsuarioSistema(
+                nombres='Admin',
+                apellidos='Principal',
+                correo='admin@admin.com',
+                clave=generate_password_hash('admin123'),
+                rol='administrador'
+            )
+            db.session.add(admin)
+            db.session.commit()
+    
+    return app
 
-class Proveedor(db.Model):
-    __tablename__ = "proveedores"
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(150), nullable=False)
-    contacto = db.Column(db.String(20), nullable=False)
-    ruc_empresa_id = db.Column(db.Integer, db.ForeignKey("ruc_empresas.id"), nullable=True)
-    estado = db.Column(db.Integer, default=1)
-    productos = db.relationship("Producto", back_populates="proveedor")
+app = create_app()
 
-class Categoria(db.Model):
-    __tablename__ = "categorias"
-    id_categoria = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(50), nullable=False)
-    descripcion = db.Column(db.Text)
-    activo = db.Column(db.Boolean, default=True)
-    productos = db.relationship("Producto", back_populates="categoria_rel")
-
-class UsuarioSistema(db.Model):
-    __tablename__ = "usuarios_sistema"
-    id = db.Column(db.Integer, primary_key=True)
-    correo = db.Column(db.String(150), unique=True, nullable=False)
-    nombres = db.Column(db.String(100), nullable=False)
-    apellidos = db.Column(db.String(100), nullable=False)
-    clave = db.Column(db.String(255), nullable=False)
-    estado = db.Column(db.Integer, default=1)
-    rol_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=False)
-    rol = db.Column(db.String(20), nullable=False)
-
-class Rol(db.Model):
-    __tablename__ = "roles"
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(50), nullable=False)
-    descripcion = db.Column(db.Text, nullable=True)
-    estado = db.Column(db.Integer, default=1)
-
-class Bloqueo(db.Model):
-    __tablename__ = "bloqueos"
-    id = db.Column(db.Integer, primary_key=True)
-    tipo_usuario = db.Column(db.Enum('sistema', 'cliente'), nullable=False)
-    usuario_sistema_id = db.Column(db.Integer, db.ForeignKey("usuarios_sistema.id"), nullable=True)
-    cliente_id = db.Column(db.Integer, nullable=True)  # Referencia al microservicio comercial
-    motivo = db.Column(db.String(255), nullable=True)
-    bloqueado_por = db.Column(db.Integer, db.ForeignKey("usuarios_sistema.id"), nullable=True)
-    fecha_bloqueo = db.Column(db.DateTime, default=datetime.now)
-    fecha_desbloqueo = db.Column(db.DateTime, nullable=True)
-    desbloqueado_por = db.Column(db.Integer, db.ForeignKey("usuarios_sistema.id"), nullable=True)
-    estado = db.Column(db.Boolean, default=True)
-    permanente = db.Column(db.Boolean, default=False)
-    minutos_bloqueo = db.Column(db.Integer, nullable=True)
-
-class IntentosLogin(db.Model):
-    __tablename__ = "intentos_login"
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(150))
-    cliente_id = db.Column(db.Integer, nullable=True)
-    usuario_sistema_id = db.Column(db.Integer, db.ForeignKey("usuarios_sistema.id"), nullable=True)
-    ip = db.Column(db.String(45))
-    intentos = db.Column(db.Integer, default=1)
-    ultimo_intento = db.Column(db.DateTime, default=datetime.now)
-    usuarios_distintos = db.Column(db.Integer, default=0)
-    ips_bloqueadas = db.Column(db.DateTime, nullable=True)
-    email_bloqueado = db.Column(db.DateTime, nullable=True)
-    intentos_totales = db.Column(db.Integer, default=0)
-
-class RucEmpresa(db.Model):
-    __tablename__ = "ruc_empresas"
-    id = db.Column(db.Integer, primary_key=True)
-    ruc = db.Column(db.String(11), unique=True, nullable=False)
-    razon_social = db.Column(db.String(200), nullable=False)
-    direccion = db.Column(db.Text, nullable=True)
-
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if "usuario_id" not in session:
-            return redirect(url_for("login"))
-        return f(*args, **kwargs)
-    return decorated_function
-
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if session.get("rol") != "administrador":
-            return "Acceso denegado", 403
-        return f(*args, **kwargs)
-    return decorated_function
-
-from routes.productos import productos_bp
-from routes.proveedores import proveedores_bp
-from routes.usuarios import usuarios_bp
-from routes.dashboard import dashboard_bp
-
-app.register_blueprint(productos_bp, url_prefix='/productos')
-app.register_blueprint(proveedores_bp, url_prefix='/proveedores')
-app.register_blueprint(usuarios_bp, url_prefix='/usuarios')
-app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
-
-@app.route("/")
-def inicio():
-    return render_template("index_inventario.html")
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-      pass
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8002, debug=False)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5001, debug=True)

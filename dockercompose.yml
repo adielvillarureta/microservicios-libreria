@@ -1,54 +1,109 @@
 version: '3.8'
 
 services:
-  # API Gateway
-  gateway:
-    build: ./api-gateway
-    container_name: api-gateway
-    ports:
-      - "8000:8000"
+  # ============================================
+  # BASE DE DATOS COMERCIAL
+  # ============================================
+  db_comercial:
+    image: mysql:8.0
+    container_name: db_comercial
+    restart: always
     environment:
-      - COMMERCIAL_URL=http://commercial:8001
-      - INVENTARIO_URL=http://inventario:8002
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: comercial_db
+      MYSQL_USER: comercial_user
+      MYSQL_PASSWORD: comercial_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - comercial_data:/var/lib/mysql
+    networks:
+      - microservicios_net
+
+  # ============================================
+  # BASE DE DATOS INVENTARIO
+  # ============================================
+  db_inventario:
+    image: mysql:8.0
+    container_name: db_inventario
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: inventario_db
+      MYSQL_USER: inventario_user
+      MYSQL_PASSWORD: inventario_password
+    ports:
+      - "3308:3306"
+    volumes:
+      - inventario_data:/var/lib/mysql
+    networks:
+      - microservicios_net
+
+  # ============================================
+  # MICROSERVICIO COMERCIAL
+  # ============================================
+  comercial:
+    build: ./COMERCIAL
+    container_name: comercial
+    restart: always
+    environment:
+      FLASK_ENV: production
+      SECRET_KEY: clave_secreta_comercial
+      MYSQL_DATABASE: comercial_db
+      MYSQL_USER: comercial_user
+      MYSQL_PASSWORD: comercial_password
+      MYSQL_HOST: db_comercial
+      MYSQL_PORT: 3306
+      INVENTARIO_API_URL: http://inventario:5001
+    ports:
+      - "5000:5000"
     depends_on:
-      - commercial
+      - db_comercial
       - inventario
     networks:
-      - microservicios-network
-    restart: unless-stopped
+      - microservicios_net
 
-  # Microservicio Comercial
-  commercial:
-    build: ./commercial
-    container_name: microservicio-comercial
-    ports:
-      - "8001:8001"
-    environment:
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - SECRET_KEY=${SECRET_KEY_COMMERCIAL}
-    networks:
-      - microservicios-network
-    restart: unless-stopped
-
-  # Microservicio Inventario
+  # ============================================
+  # MICROSERVICIO INVENTARIO
+  # ============================================
   inventario:
-    build: ./inventario-gestion
-    container_name: microservicio-inventario
-    ports:
-      - "8002:8002"
+    build: ./Inventario y gestión interna
+    container_name: inventario
+    restart: always
     environment:
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - SECRET_KEY=${SECRET_KEY_INVENTARIO}
+      FLASK_ENV: production
+      SECRET_KEY: clave_secreta_inventario
+      MYSQL_DATABASE: inventario_db
+      MYSQL_USER: inventario_user
+      MYSQL_PASSWORD: inventario_password
+      MYSQL_HOST: db_inventario
+      MYSQL_PORT: 3306
+      COMERCIAL_API_URL: http://comercial:5000
+    ports:
+      - "5001:5001"
+    depends_on:
+      - db_inventario
     networks:
-      - microservicios-network
-    restart: unless-stopped
+      - microservicios_net
+
+  # ============================================
+  # PHPMYADMIN (Opcional, para ver las BD)
+  # ============================================
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      PMA_ARBITRARY: 1
+    networks:
+      - microservicios_net
 
 networks:
-  microservicios-network:
+  microservicios_net:
     driver: bridge
+
+volumes:
+  comercial_data:
+  inventario_data:

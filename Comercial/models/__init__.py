@@ -1,7 +1,2 @@
-# Comercial/models/__init__.py
-from .clientes import Cliente
-from .ventas import Venta
-from .pedidos import Pedido
-from .detallePedido import DetallePedido
-
-__all__ = ['Cliente', 'Venta', 'Pedido', 'DetallePedido']
+# Este archivo permite que models sea un paquete
+# NO importes los modelos aquí para evitar importaciones circulares

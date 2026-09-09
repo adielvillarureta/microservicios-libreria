@@ -1,0 +1,334 @@
+
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>{% block titulito %}Inventario - Librería Salesiana{% endblock %}</title>
+    
+    <!-- BOOTSTRAP 5 CSS + ICONOS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- GOOGLE FONTS -->
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<style>
+    :root {
+        --salesiano-gold: #D4AF37;
+        --salesiano-gold-dark: #B8942F;
+        --salesiano-blue: #1E3A8A;
+        --salesiano-emerald: #10B981;
+        --salesiano-purple: #8B5CF6;
+        --salesiano-cyan: #06B6D4;
+        --salesiano-rose: #EC4899;
+        --salesiano-light: #F8F9FA;
+        --salesiano-silver: #6B7280;
+        --shadow-sagrado: 0 8px 32px rgba(30, 58, 138, 0.12);
+        --shadow-gold: 0 12px 40px rgba(212, 175, 55, 0.3);
+        --shadow-3xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        overflow-x: hidden;
+        padding-top: 0;
+    }
+
+    /* ===== NAVBAR DE INVENTARIO ===== */
+    .navbar-inventario {
+        background: linear-gradient(135deg, var(--salesiano-blue) 0%, #3B82F6 100%) !important;
+        box-shadow: var(--shadow-sagrado) !important;
+        position: sticky;
+        top: 0;
+        z-index: 1050;
+    }
+
+    .navbar-brand {
+        font-family: 'Crimson Text', Georgia, serif !important;
+        font-weight: 700 !important;
+        font-size: 1.5rem !important;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        color: #fff !important;
+        letter-spacing: -0.5px;
+    }
+
+    .navbar-brand::before {
+        content: "📦 ";
+        font-size: 1.4em;
+        margin-right: 0.2em;
+    }
+
+    /* ===== PANEL LATERAL DE INVENTARIO ===== */
+    .panel-inventario-wrapper {
+        position: sticky;
+        top: 0;
+        z-index: 1040;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        background: rgba(248, 249, 252, 0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        margin-bottom: 0.5rem;
+        border-radius: 0 0 16px 16px;
+        transition: all 0.3s ease;
+    }
+
+    .dashboard-header {
+        background: linear-gradient(135deg, #f8f9fc 0%, #ffffff 100%);
+        border: 1px solid #e9ecef;
+        border-radius: 16px;
+        padding: 0.75rem 1.5rem !important;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .dashboard-header h1 {
+        font-size: 1.1rem !important;
+    }
+
+    .dashboard-header p {
+        font-size: 0.7rem !important;
+        margin-bottom: 0;
+    }
+
+    /* ===== BOTONES DEL PANEL ===== */
+    .admin-dashboard-grid {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 0.4rem !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .btn-card {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.4rem !important;
+        padding: 0.35rem 0.8rem !important;
+        background: #f8f9fa !important;
+        border-radius: 20px !important;
+        font-size: 0.7rem !important;
+        font-weight: 600 !important;
+        color: #1f2937 !important;
+        text-decoration: none !important;
+        transition: all 0.2s ease !important;
+        border: 2px solid #e5e7eb !important;
+        cursor: pointer !important;
+        white-space: nowrap !important;
+        min-height: 34px !important;
+        line-height: 1.2 !important;
+        flex-shrink: 0 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    }
+
+    .btn-card i {
+        font-size: 0.8rem !important;
+        margin: 0 !important;
+    }
+
+    .btn-card:hover {
+        transform: translateY(-2px) scale(1.02) !important;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18) !important;
+        text-decoration: none !important;
+    }
+
+    .btn-card-gold { background: #fef3c7 !important; border-color: #fde68a !important; color: #b45309 !important; }
+    .btn-card-gold:hover { background: #fde68a !important; }
+    .btn-card-blue { background: #dbeafe !important; border-color: #bfdbfe !important; color: #1e40af !important; }
+    .btn-card-blue:hover { background: #bfdbfe !important; }
+    .btn-card-emerald { background: #d1fae5 !important; border-color: #a7f3d0 !important; color: #065f46 !important; }
+    .btn-card-emerald:hover { background: #a7f3d0 !important; }
+    .btn-card-purple { background: #f3e8ff !important; border-color: #d8b4fe !important; color: #6b21a5 !important; }
+    .btn-card-purple:hover { background: #e9d5ff !important; }
+    .btn-card-orange { background: #ffedd5 !important; border-color: #fed7aa !important; color: #c2410c !important; }
+    .btn-card-orange:hover { background: #fed7aa !important; }
+    .btn-card-pink { background: #fce7f3 !important; border-color: #fbcfe8 !important; color: #be185d !important; }
+    .btn-card-pink:hover { background: #fbcfe8 !important; }
+
+    /* ===== CONTENIDO PRINCIPAL ===== */
+    .container {
+        background: rgba(255, 255, 255, 0.97);
+        border-radius: 24px;
+        box-shadow: var(--shadow-3xl);
+        padding: 1.5rem !important;
+        margin-top: 1rem !important;
+        margin-bottom: 1.5rem !important;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .fade-in {
+        animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 992px) {
+        .container {
+            padding: 1.5rem !important;
+            margin: 1rem !important;
+            border-radius: 20px;
+        }
+        .navbar-brand {
+            font-size: 1.2rem !important;
+        }
+        .admin-dashboard-grid {
+            justify-content: flex-end !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            padding: 1rem !important;
+            margin: 0.75rem !important;
+            border-radius: 16px;
+        }
+        .navbar-brand {
+            font-size: 1rem !important;
+        }
+        .navbar-brand::before {
+            font-size: 1.2em;
+        }
+        .btn-card {
+            padding: 0.3rem 0.6rem !important;
+            font-size: 0.65rem !important;
+            min-height: 30px !important;
+        }
+        .admin-dashboard-grid {
+            gap: 0.3rem !important;
+            justify-content: center !important;
+        }
+        .dashboard-header {
+            padding: 0.5rem 0.75rem !important;
+        }
+        .dashboard-header h1 {
+            font-size: 0.9rem !important;
+        }
+        .dashboard-header p {
+            display: none;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .container {
+            padding: 0.75rem !important;
+            margin: 0.5rem !important;
+        }
+        .btn-card {
+            padding: 0.25rem 0.5rem !important;
+            font-size: 0.55rem !important;
+            min-height: 26px !important;
+            gap: 0.2rem !important;
+            border-radius: 14px !important;
+        }
+        .btn-card i {
+            font-size: 0.7rem !important;
+        }
+        .admin-dashboard-grid {
+            gap: 0.25rem !important;
+        }
+    }
+</style>
+
+<body>
+    <!-- ===== NAVBAR DE INVENTARIO ===== -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-inventario sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="/">Inventario Salesiano</a>
+            {% if session.usuario_id %}
+            <div class="d-flex align-items-center text-white gap-2 gap-sm-3">
+                <div class="d-none d-md-block">
+                    <i class="fas fa-user-circle me-2"></i>
+                    {{ session.nombre }}
+                    <span class="badge bg-warning text-dark px-2 py-1 ms-1">{{ session.rol }}</span>
+                </div>
+                <div class="d-flex gap-1 gap-sm-2">
+                    <a class="btn btn-outline-light btn-sm px-2 px-sm-3" href="/logout">
+                        <i class="fas fa-sign-out-alt me-1"></i><span class="d-none d-sm-inline">Salir</span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- ===== PANEL DE INVENTARIO (BOTONES) ===== -->
+    {% if session.usuario_id %}
+    <div class="panel-inventario-wrapper">
+        <div class="container">
+            <div class="dashboard-header">
+                <div class="row align-items-center g-1 g-md-2">
+                    <div class="col-12 col-lg-4">
+                        <h1 class="fw-bold mb-0 text-dark">
+                            <i class="fas fa-boxes me-2 text-primary"></i>Gestión de Inventario
+                        </h1>
+                        <p class="mb-0 text-secondary small">
+                            <i class="fas fa-warehouse me-1"></i>Productos, proveedores y stock
+                        </p>
+                    </div>
+
+                    <div class="col-12 col-lg-8">
+                        <div class="admin-dashboard-grid">
+                            <!-- BOTONES DE INVENTARIO -->
+                            <a href="/productos" class="btn-card btn-card-blue" title="Ver Productos">
+                                <i class="fas fa-box-open"></i>
+                                <span>Productos</span>
+                            </a>
+                            <a href="/productos/nuevo" class="btn-card btn-card-gold" title="Nuevo Producto">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Nuevo Producto</span>
+                            </a>
+                            <a href="/proveedores" class="btn-card btn-card-emerald" title="Proveedores">
+                                <i class="fas fa-handshake"></i>
+                                <span>Proveedores</span>
+                            </a>
+                            <a href="/proveedores/nuevo" class="btn-card btn-card-purple" title="Nuevo Proveedor">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Nuevo Proveedor</span>
+                            </a>
+                            <a href="/ver_productos_proveedor" class="btn-card btn-card-orange" title="Productos por Proveedor">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Por Proveedor</span>
+                            </a>
+                            <a href="/" class="btn-card btn-card-pink" title="Dashboard">
+                                <i class="fas fa-chart-pie"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ===== CONTENIDO DE CADA PÁGINA ===== -->
+    <div class="container fade-in">
+        {% block contenido %}
+        {% endblock %}
+    </div>
+
+    <!-- BOOTSTRAP JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
