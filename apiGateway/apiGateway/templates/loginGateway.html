@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Librería Salesiana - Acceso</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            color: #1e3a8a;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .btn {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn-cliente {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-admin {
+            background: #1e3a8a;
+            color: white;
+        }
+        .btn-guest {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        .btn-cliente:hover {
+            background: #2563eb;
+        }
+        .btn-admin:hover {
+            background: #1e40af;
+        }
+        .btn-guest:hover {
+            background: #d1d5db;
+        }
+        .logo {
+            text-align: center;
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #6b7280;
+            font-size: 12px;
+        }
+        .divider {
+            border: none;
+            border-top: 1px solid #e5e7eb;
+            margin: 20px 0;
+        }
+        .badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            font-size: 10px;
+            padding: 2px 10px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">📚</div>
+        <h1>Librería Salesiana <span class="badge">API Gateway</span></h1>
+        <p style="text-align: center; color: #6b7280; margin-bottom: 25px;">
+            Selecciona tu tipo de acceso
+        </p>
+        
+        <div class="btn-group">
+            <a href="/api/comercial/login-cliente" class="btn btn-cliente">
+                🛒 Cliente (Compras)
+            </a>
+            <a href="/api/inventario/login" class="btn btn-admin">
+                🔐 Administrador / Vendedor
+            </a>
+            <hr class="divider">
+            <a href="/api/comercial/catalogo" class="btn btn-guest">
+                👀 Ver catálogo (sin login)
+            </a>
+        </div>
+        
+        <div class="footer">
+            <p>© 2024 Librería Salesiana Don Bosco</p>
+            <p style="font-size: 10px; color: #9ca3af;">
+                Microservicios: Comercial | Inventario
+            </p>
+        </div>
+    </div>
+</body>
+</html>
