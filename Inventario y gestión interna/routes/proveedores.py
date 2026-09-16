@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, render_template, redirect, url_for
-from app import db
+from extensions import db
 from models.proveedor import Proveedor
 from models.producto import Producto
 

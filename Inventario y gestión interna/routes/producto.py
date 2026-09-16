@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, render_template, redirect, url_for
-from app import db
+from extensions import db
 from models.producto import Producto
 from models.categoria import Categoria
 from models.proveedor import Proveedor
@@ -80,3 +80,18 @@ def api_actualizar_stock(id):
     producto.cantidad = data.get('cantidad', producto.cantidad)
     db.session.commit()
     return jsonify({'stock': producto.cantidad})
+@producto_bp.route('/api/productos/catalogo', methods=['GET'])
+def api_catalogo_productos():
+    """Endpoint para que Comercial consulte productos disponibles"""
+    q = request.args.get('q', '')
+    categoria_id = request.args.get('categoria', type=int)
+    
+    query = Producto.query.filter(Producto.cantidad > 0)
+    
+    if q:
+        query = query.filter(Producto.nombre.ilike(f'%{q}%'))
+    if categoria_id:
+        query = query.filter(Producto.id_categoria == categoria_id)
+    
+    productos = query.all()
+    return jsonify([p.to_dict() for p in productos]), 200

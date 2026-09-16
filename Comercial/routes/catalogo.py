@@ -1,19 +1,25 @@
 # Comercial/routes/catalogo.py
-from flask import Blueprint, render_template, request, jsonify, url_for
+from flask import Blueprint, render_template, request, jsonify
 from extensions import db
-from models.clientes import Cliente
 import requests
 import os
 
 catalogo_bp = Blueprint('catalogo', __name__, template_folder='../templates')
-INVENTARIO_URL = os.getenv('INVENTARIO_URL', 'http://localhost:8002')
 
+INVENTARIO_URL = os.getenv('INVENTARIO_URL', 'http://localhost:5001')
+
+
+# ============================================
+# RUTA PRINCIPAL: Catálogo (HTML)
+# ============================================
 @catalogo_bp.route("/")
+@catalogo_bp.route("/catalogo")
 def catalogo_cliente():
     """Catálogo de productos para clientes"""
     try:
         categorias_response = requests.get(f"{INVENTARIO_URL}/api/categorias", timeout=5)
         categorias = categorias_response.json() if categorias_response.status_code == 200 else []
+        
         productos_response = requests.get(f"{INVENTARIO_URL}/api/productos/catalogo", timeout=5)
         productos = productos_response.json() if productos_response.status_code == 200 else []
         
@@ -24,9 +30,14 @@ def catalogo_cliente():
         print(f"❌ Error en catálogo: {e}")
         return render_template("catalogo_cliente.html", categorias=[], productos=[])
 
+
+# ============================================
+# API: Obtener productos (para el JS)
+# ============================================
 @catalogo_bp.route("/api/productos")
+@catalogo_bp.route("/api/productos/catalogo")  # ✅ ALIAS para el JS del frontend
 def api_productos():
-    """API para obtener productos del catálogo"""
+    """API para obtener productos del catálogo (proxy a Inventario)"""
     try:
         q = request.args.get('q', '')
         categoria_id = request.args.get('categoria', type=int)
@@ -37,12 +48,18 @@ def api_productos():
         if categoria_id:
             params['categoria'] = categoria_id
         
-        response = requests.get(f"{INVENTARIO_URL}/api/productos/catalogo", params=params, timeout=5)
+        response = requests.get(
+            f"{INVENTARIO_URL}/api/productos/catalogo", 
+            params=params, 
+            timeout=5
+        )
         
         if response.status_code == 200:
             return jsonify(response.json())
         else:
             return jsonify({"error": "Error al obtener productos"}), 500
             
+    except requests.exceptions.ConnectionError:
+        return jsonify({"error": "El microservicio de Inventario no está disponible"}), 503
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -1,42 +1,54 @@
 import os
+from datetime import datetime
 from flask import Flask, render_template, session, redirect, url_for, request
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
-from flask_cors import CORS
-from dotenv import load_dotenv
+from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
+
 from extensions import db, login_manager, bcrypt, cors
 
 load_dotenv()
 
-db = SQLAlchemy()
-login_manager = LoginManager()
-cors = CORS()
 
 def create_app():
     app = Flask(__name__, template_folder='templates')
     
     # Configuración
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'clave_secreta_inventario')
     app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/inventario_db'
- 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Inicializar extensiones
     db.init_app(app)
     login_manager.init_app(app)
+    bcrypt.init_app(app)
     cors.init_app(app)
     
     # Configurar login
-    login_manager.login_view = 'usuario.login'
+    login_manager.login_view = 'login'
     
-    # Importar modelos para que SQLAlchemy los conozca
+    # ============================================
+    # USER LOADER (necesario para Flask-Login)
+    # ============================================
+    class User(UserMixin):
+        def __init__(self, id):
+            self.id = id
+    
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User(user_id)
+    
+    # ============================================
+    # IMPORTAR MODELOS
+    # ============================================
     from models.categoria import Categoria
     from models.producto import Producto
     from models.proveedor import Proveedor
     from models.usuarioSistema import UsuarioSistema
     
-    # Registrar blueprints
+    # ============================================
+    # REGISTRAR BLUEPRINTS
+    # ============================================
     from routes.producto import producto_bp
     from routes.proveedores import proveedores_bp
     from routes.bloqueos import bloqueos_bp
@@ -47,9 +59,9 @@ def create_app():
     app.register_blueprint(bloqueos_bp)
     app.register_blueprint(usuario_bp)
     
-    # ======================================
+    # ============================================
     # RUTAS AUXILIARES (Login y Panel)
-    # ======================================
+    # ============================================
     @app.route('/login', methods=['GET', 'POST'])
     def login():
         if request.method == 'POST':
@@ -66,12 +78,12 @@ def create_app():
                 return render_template('login.html', error="Credenciales incorrectas")
         
         return render_template('login.html')
-
+    
     @app.route('/logout')
     def logout():
         session.clear()
         return redirect(url_for('login'))
-
+    
     @app.route('/')
     def dashboard():
         if 'usuario_id' not in session:
@@ -101,17 +113,18 @@ def create_app():
             graph_top={"data": [], "layout": {}},
             graph_cat={"data": [], "layout": {}},
             graph_estados={"data": [], "layout": {}},
-            ahora_peru=__import__('datetime').datetime.now()
+            ahora_peru=datetime.now()
         )
-
+    
     @app.route('/health')
     def health():
         return {"status": "ok", "service": "inventario"}, 200
-
-    # Crear tablas automáticamente
+    
+    # ============================================
+    # CREAR TABLAS Y USUARIO ADMIN
+    # ============================================
     with app.app_context():
         db.create_all()
-        # Crear usuario admin por defecto si no existe
         if not UsuarioSistema.query.filter_by(correo='admin@admin.com').first():
             admin = UsuarioSistema(
                 nombres='Admin',
@@ -122,8 +135,10 @@ def create_app():
             )
             db.session.add(admin)
             db.session.commit()
+            print("✅ Usuario admin creado: admin@admin.com / admin123")
     
     return app
+
 
 app = create_app()
 

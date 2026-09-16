@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, render_template, redirect, url_for, session
-from app import db
+from extensions import db
 from models.usuarioSistema import UsuarioSistema
 from services.authService import AuthService
 

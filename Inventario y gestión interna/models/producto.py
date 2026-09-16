@@ -15,10 +15,10 @@ class Producto(db.Model):
     
     # Relaciones
     id_categoria = db.Column(db.Integer, db.ForeignKey('categorias.id_categoria'))
-    categoria = db.relationship('Categoria', foreign_keys='productos')
+    categoria = db.relationship('Categoria')
     
     proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedores.id'))
-    proveedor = db.relationship('Proveedor', foreign_keys='productos')
+    proveedor = db.relationship('Proveedor')
     
     def to_dict(self):
         return {
