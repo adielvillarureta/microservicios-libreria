@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-from app import db
-from models.cupon import Cupon
+from extensions import db
+from models.cupones import Cupon
 from datetime import datetime
 
 cupones_bp = Blueprint('cupones', __name__)

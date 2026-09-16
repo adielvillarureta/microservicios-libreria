@@ -45,6 +45,7 @@ def api_crear_proveedor():
     return jsonify(nuevo.to_dict()), 201
 
 @proveedores_bp.route('/proveedores/<int:id>', methods=['PUT'])
+
 def api_actualizar_proveedor(id):
     proveedor = Proveedor.query.get_or_404(id)
     data = request.get_json()

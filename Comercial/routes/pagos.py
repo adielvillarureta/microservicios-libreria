@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-from app import db
-from models.pedido import Pedido
+from extensions import db
+from models.pedidos import Pedido
 
 pagos_bp = Blueprint('pagos', __name__)
 

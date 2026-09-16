@@ -1,6 +1,6 @@
 # Comercial/routes/catalogo.py
 from flask import Blueprint, render_template, request, jsonify, url_for
-from app import db
+from extensions import db
 from models.clientes import Cliente
 import requests
 import os

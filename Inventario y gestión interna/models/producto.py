@@ -1,4 +1,4 @@
-from app import db
+from extensions import db  # ✅ LO CORRECTO
 
 class Producto(db.Model):
     __tablename__ = 'productos'
@@ -15,10 +15,10 @@ class Producto(db.Model):
     
     # Relaciones
     id_categoria = db.Column(db.Integer, db.ForeignKey('categorias.id_categoria'))
-    categoria = db.relationship('Categoria', back_populates='productos')
+    categoria = db.relationship('Categoria', foreign_keys='productos')
     
     proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedores.id'))
-    proveedor = db.relationship('Proveedor', back_populates='productos')
+    proveedor = db.relationship('Proveedor', foreign_keys='productos')
     
     def to_dict(self):
         return {

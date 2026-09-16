@@ -1,4 +1,4 @@
-from app import db
+from extensions import db  # ✅ LO CORRECTO
 from flask_login import UserMixin
 
 class UsuarioSistema(db.Model, UserMixin):

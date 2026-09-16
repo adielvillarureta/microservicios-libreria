@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request
-from app import db
-from models.pedido import Pedido
-from models.venta import Venta
-from models.cliente import Cliente
+from extensions import db
+from models.pedidos import Pedido
+from models.ventas import Venta
+from models.clientes import Cliente
 from models.usuarioSistema import UsuarioSistema
 from werkzeug.security import check_password_hash
 

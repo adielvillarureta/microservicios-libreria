@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
-from app import db
-from models.venta import Venta
+from extensions import db  # ✅ LA SOLUCIÓN
+from models.ventas import Venta
 
 ventas_bp = Blueprint('ventas', __name__)
 
