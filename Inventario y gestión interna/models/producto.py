@@ -30,6 +30,7 @@ class Producto(db.Model):
             'cantidad': self.cantidad,
             'codigo_barras': self.codigo_barras,
             'imagen': self.imagen,
+            'imagen_url': ('/static/img/productos/' + self.imagen) if self.imagen else None,
             'destacado': self.destacado,
             'id_categoria': self.id_categoria,
             'proveedor_id': self.proveedor_id

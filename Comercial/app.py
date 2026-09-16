@@ -68,6 +68,10 @@ def create_app():
     @app.route('/health')
     def health():
         return {"status": "ok", "service": "comercial"}, 200
+
+    @app.route('/contacto')
+    def contacto():
+        return render_template('contacto.html')
     
     # =============================================
     # CREAR TABLAS Y USUARIO ADMIN

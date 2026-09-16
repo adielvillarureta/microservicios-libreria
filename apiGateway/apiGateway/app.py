@@ -11,7 +11,7 @@ from functools import wraps
 
 load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=None)
 app.secret_key = os.getenv("SECRET_KEY", "clave_secreta_gateway")
 CORS(app)
 
@@ -28,7 +28,7 @@ INVENTARIO_URL = os.getenv("INVENTARIO_URL", "http://localhost:5001")
 # ============================================
 # FUNCIÓN PARA REENVIAR PETICIONES
 # ============================================
-def proxy_request(method, service_url, path, prefix=""):
+def proxy_request(method, service_url, path, prefix="", public_prefix=""):
     """Reenvía una petición al microservicio correspondiente"""
     # Construir URL final
     if prefix:
@@ -60,6 +60,19 @@ def proxy_request(method, service_url, path, prefix=""):
         excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
         headers = [(name, value) for name, value in response.headers.items()
                    if name.lower() not in excluded_headers]
+
+        # Reescribir redirects (Location) para que queden dentro del namespace del gateway
+        if public_prefix and response.status_code in (301, 302, 303, 307, 308) and "Location" in response.headers:
+            location = response.headers["Location"]
+            if location.startswith(service_url):
+                location = location[len(service_url):]
+            if location == "/":
+                location = public_prefix
+            elif location.startswith("/") and not location.startswith("//") and not location.startswith(f"{public_prefix}/") and location != public_prefix:
+                location = f"{public_prefix}{location}"
+            if location != response.headers["Location"]:
+                headers = [(n, v) for n, v in headers if n.lower() != "location"]
+                headers.append(("Location", location))
 
         return Response(response.content, status=response.status_code, headers=headers)
 
@@ -151,7 +164,7 @@ def login_redirect():
 # ============================================
 @app.route("/api/comercial/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 def proxy_comercial_api(path):
-    return proxy_request(request.method, COMERCIAL_URL, path)
+    return proxy_request(request.method, COMERCIAL_URL, path, public_prefix="/api/comercial")
 
 
 # ============================================
@@ -159,7 +172,7 @@ def proxy_comercial_api(path):
 # ============================================
 @app.route("/api/inventario/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 def proxy_inventario_api(path):
-    return proxy_request(request.method, INVENTARIO_URL, path)
+    return proxy_request(request.method, INVENTARIO_URL, path, public_prefix="/api/inventario")
 
 
 # ============================================
@@ -169,7 +182,7 @@ def proxy_inventario_api(path):
 @app.route("/inventario/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 def proxy_inventario(path):
     """Todo lo que empiece con /inventario va al microservicio Inventario"""
-    return proxy_request(request.method, INVENTARIO_URL, path)
+    return proxy_request(request.method, INVENTARIO_URL, path, public_prefix="/inventario")
 
 
 @app.route("/", defaults={"path": ""})
