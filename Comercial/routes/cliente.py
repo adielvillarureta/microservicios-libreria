@@ -1,4 +1,7 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
+import os
+import glob
+from werkzeug.utils import secure_filename
 # ✅ CORREGIDO: Importamos desde extensions para evitar el error circular
 from extensions import db, bcrypt 
 # ✅ CORREGIDO: Importamos el modelo desde su ruta real
@@ -123,7 +126,7 @@ def login_cliente():
 
             db.session.execute(text("""
                 UPDATE bloqueos
-                SET estado = 0, fecha_desbloqueo = NOW()
+                SET estado = 0, fecha_desbloqueo = CURRENT_TIMESTAMP
                 WHERE cliente_id = :cliente_id
                 AND tipo_usuario = 'cliente'
                 AND permanente = 0
@@ -248,6 +251,36 @@ def cliente_perfil():
         flash("❌ Cliente no encontrado", "danger")
         return redirect(url_for("cliente.logout_cliente"))
     return render_template("cliente_perfil.html", cliente=cliente)
+
+
+EXTENSIONES_FOTO = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+
+@cliente_bp.route('/cliente/foto-perfil', methods=['POST'])
+@login_required_cliente
+def cliente_foto_perfil():
+    archivo = request.files.get('foto')
+    if not archivo or archivo.filename == '':
+        flash("❌ Selecciona una imagen", "warning")
+        return redirect(url_for("cliente.cliente_perfil"))
+
+    if '.' not in archivo.filename or archivo.filename.rsplit('.', 1)[-1].lower() not in EXTENSIONES_FOTO:
+        flash("❌ Formato no permitido (usa PNG, JPG, JPEG, GIF o WEBP)", "danger")
+        return redirect(url_for("cliente.cliente_perfil"))
+
+    extension = archivo.filename.rsplit('.', 1)[-1].lower()
+    carpeta = os.path.join(current_app.root_path, 'static', 'img', 'perfiles')
+    os.makedirs(carpeta, exist_ok=True)
+
+    for anterior in glob.glob(os.path.join(carpeta, f'cliente_{session["cliente_id"]}.*')):
+        try:
+            os.remove(anterior)
+        except OSError:
+            pass
+
+    archivo.save(os.path.join(carpeta, f'cliente_{session["cliente_id"]}.{extension}'))
+    flash("✅ Foto de perfil actualizada", "success")
+    return redirect(url_for("cliente.cliente_perfil"))
 
 
 @cliente_bp.route('/cliente/actualizar-perfil', methods=['POST'])

@@ -37,7 +37,7 @@ def verificar_bloqueo_ip(ip):
             AND tipo_usuario = 'cliente'
             AND estado = 1
             AND permanente = 0
-            AND fecha_desbloqueo > NOW()
+            AND fecha_desbloqueo > CURRENT_TIMESTAMP
         """), {"ip": ip}).first()
         return resultado is not None
     except Exception:
@@ -72,7 +72,7 @@ def limpiar_bloqueos_expirados():
             WHERE estado = 1
             AND permanente = 0
             AND fecha_desbloqueo IS NOT NULL
-            AND fecha_desbloqueo < NOW()
+            AND fecha_desbloqueo < CURRENT_TIMESTAMP
         """))
         db.session.commit()
 
@@ -123,7 +123,7 @@ def registrar_intento_fallido(email, ip, es_cliente=True):
         if registro.intentos_totales >= 5:
             db.session.execute(text("""
                 INSERT INTO bloqueos (email, ip, tipo_usuario, motivo, permanente, estado, fecha_bloqueo)
-                VALUES (:email, :ip, 'cliente', '5 intentos fallidos de login', 1, 1, NOW())
+                VALUES (:email, :ip, 'cliente', '5 intentos fallidos de login', 1, 1, CURRENT_TIMESTAMP)
             """), {"email": email, "ip": ip})
             resultado["bloqueado"] = True
             resultado["tipo"] = "permanente"

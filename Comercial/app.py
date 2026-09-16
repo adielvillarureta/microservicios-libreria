@@ -79,6 +79,20 @@ def create_app():
     @app.route('/contacto')
     def contacto():
         return render_template('contacto.html')
+
+    @app.context_processor
+    def inject_cliente_foto():
+        import glob
+        foto_url = None
+        cliente_id = session.get('cliente_id')
+        if cliente_id:
+            patron = os.path.join(app.root_path, 'static', 'img', 'perfiles', f'cliente_{cliente_id}.*')
+            archivos = glob.glob(patron)
+            if archivos:
+                nombre = os.path.basename(archivos[0])
+                version = int(os.path.getmtime(archivos[0]))
+                foto_url = url_for('static', filename=f'img/perfiles/{nombre}') + f'?v={version}'
+        return {'cliente_foto_url': foto_url}
     
     # =============================================
     # CREAR TABLAS Y USUARIO ADMIN
@@ -91,6 +105,7 @@ def create_app():
         from models.usuarioSistema import UsuarioSistema
         from models.cupones import Cupon
         from models.intentos_login import IntentosLogin
+        from models.bloqueos import Bloqueo
 
         db.create_all()
         

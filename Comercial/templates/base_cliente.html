@@ -212,6 +212,50 @@
         .dropdown-menu::-webkit-scrollbar-thumb:hover {
             background: #B8942F;
         }
+
+        .nav-search {
+            max-width: 460px;
+            width: 100%;
+        }
+
+        .nav-search .input-group {
+            background: #fff;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+        }
+
+        .nav-search .input-group-text {
+            background: #fff;
+            border: none;
+            color: #9ca3af;
+        }
+
+        .nav-search .form-control {
+            border: none;
+            box-shadow: none !important;
+            font-size: 0.85rem;
+        }
+
+        .nav-search .btn {
+            border: none;
+            background: var(--salesiano-gold);
+            color: #1E3A8A;
+            font-weight: 600;
+            border-radius: 0;
+            padding-inline: 1rem;
+        }
+
+        .nav-search .btn:hover {
+            background: #c8a82e;
+        }
+
+        @media (max-width: 992px) {
+            .nav-search {
+                max-width: 100%;
+                margin-top: 0.5rem;
+            }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -245,14 +289,14 @@
                         <li>
                             <a class="dropdown-item" href="#" onclick="filtrarPorCategoria({{ categoria.id_categoria }}); return false;">
                                 <span>
-                                    {% if categoria.nombre|lower == 'cuadernos' %}📓
-                                    {% elif categoria.nombre|lower == 'lapiceros' %}✍️
-                                    {% elif categoria.nombre|lower == 'papeleria' %}📄
-                                    {% elif categoria.nombre|lower == 'arte' %}🎨
-                                    {% elif categoria.nombre|lower == 'oficina' %}📎
-                                    {% elif categoria.nombre|lower == 'herramientas' %}🔧
-                                    {% elif categoria.nombre|lower == 'libros' %}📚
-                                    {% elif categoria.nombre|lower == 'mochilas' %}🎒
+                                    {% set c = categoria.nombre|lower %}
+                                    {% if 'libro' in c %}📚
+                                    {% elif 'biblia' in c or 'catecismo' in c %}📖
+                                    {% elif 'estatua' in c or 'imagen' in c %}🗿
+                                    {% elif 'auxiliadora' in c or 'mar' in c %}🌹
+                                    {% elif 'rosario' in c or 'escapulario' in c %}📿
+                                    {% elif 'medalla' in c or 'crucifijo' in c or 'cruz' in c %}✝️
+                                    {% elif 'devoci' in c %}🕯️
                                     {% else %}📂{% endif %}
                                     {{ categoria.nombre|capitalize }}
                                 </span>
@@ -265,6 +309,16 @@
                     </ul>
                 </div>
             </div>
+
+            <!-- BUSCADOR CENTRAL (ESCRITORIO) -->
+            <form class="nav-search d-none d-lg-flex mx-auto" role="search" onsubmit="return buscarDesdeNavbar(event)">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="search" id="buscadorNavbar" class="form-control"
+                           placeholder="Buscar productos, libros, estatuas..." autocomplete="off">
+                    <button class="btn" type="submit">Buscar</button>
+                </div>
+            </form>
 
             <!-- TOGGLER MÓVIL -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCliente" aria-label="Menú">
@@ -291,14 +345,14 @@
                             {% for categoria in categorias %}
                             <li>
                                 <a class="dropdown-item" href="#" onclick="filtrarPorCategoria({{ categoria.id_categoria }}); return false;">
-                                    {% if categoria.nombre|lower == 'cuadernos' %}📓
-                                    {% elif categoria.nombre|lower == 'lapiceros' %}✍️
-                                    {% elif categoria.nombre|lower == 'papeleria' %}📄
-                                    {% elif categoria.nombre|lower == 'arte' %}🎨
-                                    {% elif categoria.nombre|lower == 'oficina' %}📎
-                                    {% elif categoria.nombre|lower == 'herramientas' %}🔧
-                                    {% elif categoria.nombre|lower == 'libros' %}📚
-                                    {% elif categoria.nombre|lower == 'mochilas' %}🎒
+                                    {% set c = categoria.nombre|lower %}
+                                    {% if 'libro' in c %}📚
+                                    {% elif 'biblia' in c or 'catecismo' in c %}📖
+                                    {% elif 'estatua' in c or 'imagen' in c %}🗿
+                                    {% elif 'auxiliadora' in c or 'mar' in c %}🌹
+                                    {% elif 'rosario' in c or 'escapulario' in c %}📿
+                                    {% elif 'medalla' in c or 'crucifijo' in c or 'cruz' in c %}✝️
+                                    {% elif 'devoci' in c %}🕯️
                                     {% else %}📂{% endif %}
                                     {{ categoria.nombre|capitalize }}
                                 </a>
@@ -307,11 +361,28 @@
                         </ul>
                     </li>
 
+                    <!-- BUSCADOR (MÓVIL) -->
+                    <li class="nav-item d-lg-none w-100 my-2">
+                        <form role="search" onsubmit="return buscarDesdeNavbar(event)">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                                <input type="search" id="buscadorNavbarMovil" class="form-control"
+                                       placeholder="Buscar productos..." autocomplete="off">
+                                <button class="btn btn-gold" type="submit">Buscar</button>
+                            </div>
+                        </form>
+                    </li>
+
                     <!-- USUARIO -->
                     {% if session.cliente_id %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i>{{ session.cliente_nombres }}
+                            {% if cliente_foto_url %}
+                            <img src="{{ cliente_foto_url }}" alt="Foto de perfil" class="rounded-circle me-1"
+                                 style="width:24px;height:24px;object-fit:cover;border:2px solid var(--salesiano-gold);">
+                            {% else %}
+                            <i class="fas fa-user-circle me-1"></i>
+                            {% endif %}{{ session.cliente_nombres }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="/cliente/perfil">
@@ -444,6 +515,29 @@
             if (grid) {
                 grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+        }
+
+        // ============================================
+        // BUSCADOR CENTRAL DE LA NAVBAR
+        // ============================================
+        function buscarDesdeNavbar(event) {
+            if (event) event.preventDefault();
+            var escritorio = document.getElementById('buscadorNavbar');
+            var movil = document.getElementById('buscadorNavbarMovil');
+            var texto = ((escritorio && escritorio.value) || (movil && movil.value) || '').trim();
+
+            var filtro = document.getElementById('filtroBuscar');
+            if (filtro) {
+                filtro.value = texto;
+                if (typeof aplicarFiltros === 'function') {
+                    aplicarFiltros();
+                }
+                var grid = document.getElementById('productosGrid');
+                if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                window.location.href = '/catalogo?q=' + encodeURIComponent(texto);
+            }
+            return false;
         }
     </script>
 

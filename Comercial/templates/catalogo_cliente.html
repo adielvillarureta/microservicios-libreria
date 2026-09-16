@@ -29,12 +29,14 @@
                             <option value="">📂 Todas las categorías</option>
                             {% for categoria in categorias %}
                             <option value="{{ categoria.id_categoria }}">
-                                {% if categoria.nombre == 'cuadernos' %}📓
-                                {% elif categoria.nombre == 'lapiceros' %}✍️
-                                {% elif categoria.nombre == 'papeleria' %}📄
-                                {% elif categoria.nombre == 'arte' %}🎨
-                                {% elif categoria.nombre == 'oficina' %}📎
-                                {% elif categoria.nombre == 'herramientas' %}🔧
+                                {% set c = categoria.nombre|lower %}
+                                {% if 'libro' in c %}📚
+                                {% elif 'biblia' in c or 'catecismo' in c %}📖
+                                {% elif 'estatua' in c or 'imagen' in c %}🗿
+                                {% elif 'auxiliadora' in c or 'mar' in c %}🌹
+                                {% elif 'rosario' in c or 'escapulario' in c %}📿
+                                {% elif 'medalla' in c or 'crucifijo' in c or 'cruz' in c %}✝️
+                                {% elif 'devoci' in c %}🕯️
                                 {% else %}📂{% endif %}
                                 {{ categoria.nombre|capitalize }}
                             </option>
@@ -164,6 +166,10 @@ function cargarProductos() {
             productosOriginal = data;
             productosFiltrados = data;
             mostrarProductos(productosFiltrados);
+            if (window.filtroInicialPendiente) {
+                window.filtroInicialPendiente = false;
+                aplicarFiltros();
+            }
         })
         .catch(function(error) {
             document.getElementById('productosGrid').innerHTML = '<div class="col-12 text-center"><div class="alert alert-danger">❌ Error al cargar productos</div></div>';
@@ -459,7 +465,24 @@ function limpiarFiltros() {
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btnAplicarFiltros').addEventListener('click', aplicarFiltros);
     document.getElementById('btnLimpiarFiltros').addEventListener('click', limpiarFiltros);
-    
+
+    var params = new URLSearchParams(window.location.search);
+    var qInicial = params.get('q');
+    var categoriaInicial = params.get('categoria');
+
+    if (qInicial) {
+        document.getElementById('filtroBuscar').value = qInicial;
+        var buscadorNavbar = document.getElementById('buscadorNavbar');
+        var buscadorNavbarMovil = document.getElementById('buscadorNavbarMovil');
+        if (buscadorNavbar) buscadorNavbar.value = qInicial;
+        if (buscadorNavbarMovil) buscadorNavbarMovil.value = qInicial;
+        window.filtroInicialPendiente = true;
+    }
+    if (categoriaInicial) {
+        document.getElementById('filtroCategoria').value = categoriaInicial;
+        window.filtroInicialPendiente = true;
+    }
+
     cargarProductos();
     actualizarContadorCarrito();
 });
