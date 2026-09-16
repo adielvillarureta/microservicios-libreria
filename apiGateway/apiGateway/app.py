@@ -3,6 +3,7 @@ import os
 import time
 import logging
 import requests
+from datetime import datetime
 from flask import Flask, request, Response, jsonify, session, redirect, url_for, render_template
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -81,22 +82,27 @@ def proxy_request(method, service_url, path, prefix=""):
 # HEALTH CHECK
 # ============================================
 def check_service_health(url):
-    """Verifica si un microservicio está activo"""
+    """Verifica si un microservicio está activo y mide la latencia (ms)"""
     try:
+        start = time.time()
         response = requests.get(f"{url}/health", timeout=3)
-        return "active" if response.status_code == 200 else "inactive"
-    except:
-        return "inactive"
+        latency_ms = round((time.time() - start) * 1000)
+        status = "active" if response.status_code == 200 else "inactive"
+        return {"status": status, "latency_ms": latency_ms}
+    except Exception:
+        return {"status": "inactive", "latency_ms": None}
 
 
 @app.route("/health")
 def health():
-    """Health check del gateway"""
+    """Health check del gateway (JSON)"""
+    comercial = check_service_health(COMERCIAL_URL)
+    inventario = check_service_health(INVENTARIO_URL)
     return jsonify({
         "gateway": "active",
         "services": {
-            "comercial": check_service_health(COMERCIAL_URL),
-            "inventario": check_service_health(INVENTARIO_URL)
+            "comercial": comercial,
+            "inventario": inventario
         },
         "urls": {
             "comercial": COMERCIAL_URL,
@@ -107,27 +113,22 @@ def health():
 
 
 # ============================================
-# PÁGINA PRINCIPAL
+# PÁGINA PRINCIPAL (DASHBOARD HTML)
 # ============================================
 @app.route("/")
 def home():
-    """Página principal del gateway"""
-    return jsonify({
-        "name": "API Gateway - Librería Salesiana",
-        "version": "1.0.0",
-        "estado": "activo",
-        "servicios": {
-            "comercial": check_service_health(COMERCIAL_URL),
-            "inventario": check_service_health(INVENTARIO_URL)
-        },
-        "rutas_disponibles": {
-            "catalogo": "/catalogo (va a Comercial)",
-            "login_cliente": "/login-cliente (va a Comercial)",
-            "login_admin": "/inventario/login (va a Inventario)",
-            "dashboard_admin": "/inventario/dashboard (va a Inventario)",
-            "health": "/health"
-        }
-    })
+    """Dashboard visual del API Gateway"""
+    comercial = check_service_health(COMERCIAL_URL)
+    inventario = check_service_health(INVENTARIO_URL)
+    return render_template(
+        "dashboard.html",
+        gateway="active",
+        fecha_hora=datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+        comercial=comercial,
+        inventario=inventario,
+        comercial_url=COMERCIAL_URL,
+        inventario_url=INVENTARIO_URL
+    )
 
 
 # ============================================

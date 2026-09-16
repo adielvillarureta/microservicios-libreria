@@ -80,6 +80,12 @@ def api_actualizar_stock(id):
     producto.cantidad = data.get('cantidad', producto.cantidad)
     db.session.commit()
     return jsonify({'stock': producto.cantidad})
+@producto_bp.route('/api/categorias', methods=['GET'])
+def api_listar_categorias():
+    """Endpoint para que Comercial consulte las categorías disponibles"""
+    categorias = Categoria.query.all()
+    return jsonify([c.to_dict() for c in categorias]), 200
+
 @producto_bp.route('/api/productos/catalogo', methods=['GET'])
 def api_catalogo_productos():
     """Endpoint para que Comercial consulte productos disponibles"""

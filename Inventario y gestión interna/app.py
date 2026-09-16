@@ -15,8 +15,13 @@ def create_app():
     
     # Configuración
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'clave_secreta_inventario')
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/inventario_db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = (
+        f"mysql+pymysql://{os.getenv('MYSQL_USER', 'root')}:{os.getenv('MYSQL_PASSWORD', '')}"
+        f"@{os.getenv('MYSQL_HOST', 'localhost')}:{os.getenv('MYSQL_PORT', '3306')}/{os.getenv('MYSQL_DATABASE', 'inventario_db')}"
+    )
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    if os.getenv('DATABASE_URL'):
+        app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     
     # Inicializar extensiones
     db.init_app(app)
@@ -25,7 +30,7 @@ def create_app():
     cors.init_app(app)
     
     # Configurar login
-    login_manager.login_view = 'login'
+    login_manager.login_view = 'usuario.login'
     
     # ============================================
     # USER LOADER (necesario para Flask-Login)
@@ -60,34 +65,12 @@ def create_app():
     app.register_blueprint(usuario_bp)
     
     # ============================================
-    # RUTAS AUXILIARES (Login y Panel)
+    # RUTA PRINCIPAL (Panel)
     # ============================================
-    @app.route('/login', methods=['GET', 'POST'])
-    def login():
-        if request.method == 'POST':
-            correo = request.form.get('correo')
-            clave = request.form.get('clave')
-            usuario = UsuarioSistema.query.filter_by(correo=correo).first()
-            
-            if usuario and check_password_hash(usuario.clave, clave):
-                session['usuario_id'] = usuario.id
-                session['nombre'] = usuario.nombres
-                session['rol'] = usuario.rol
-                return redirect(url_for('dashboard'))
-            else:
-                return render_template('login.html', error="Credenciales incorrectas")
-        
-        return render_template('login.html')
-    
-    @app.route('/logout')
-    def logout():
-        session.clear()
-        return redirect(url_for('login'))
-    
     @app.route('/')
     def dashboard():
         if 'usuario_id' not in session:
-            return redirect(url_for('login'))
+            return redirect(url_for('usuario.login'))
         
         total_productos = Producto.query.count()
         stock_bajo = Producto.query.filter(Producto.cantidad <= 5, Producto.cantidad > 0).all()

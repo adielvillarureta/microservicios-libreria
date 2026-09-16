@@ -6,13 +6,12 @@ import os
 
 catalogo_bp = Blueprint('catalogo', __name__, template_folder='../templates')
 
-INVENTARIO_URL = os.getenv('INVENTARIO_URL', 'http://localhost:5001')
+INVENTARIO_URL = os.getenv('INVENTARIO_API_URL') or os.getenv('INVENTARIO_URL', 'http://localhost:5001')
 
 
 # ============================================
 # RUTA PRINCIPAL: Catálogo (HTML)
 # ============================================
-@catalogo_bp.route("/")
 @catalogo_bp.route("/catalogo")
 def catalogo_cliente():
     """Catálogo de productos para clientes"""

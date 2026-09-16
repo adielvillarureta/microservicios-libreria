@@ -26,10 +26,12 @@ def create_app():
     # Configuración
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
     app.config['SQLALCHEMY_DATABASE_URI'] = (
-        f"mysql+pymysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}"
-        f"@{os.getenv('MYSQL_HOST')}:{os.getenv('MYSQL_PORT')}/{os.getenv('MYSQL_DATABASE')}"
+        f"mysql+pymysql://{os.getenv('MYSQL_USER', 'root')}:{os.getenv('MYSQL_PASSWORD', '')}"
+        f"@{os.getenv('MYSQL_HOST', 'localhost')}:{os.getenv('MYSQL_PORT', '3306')}/{os.getenv('MYSQL_DATABASE', 'comercial_db')}"
     )
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/comercial_db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    if os.getenv('DATABASE_URL'):
+        app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     
     # Inicializar extensiones
     db.init_app(app)
@@ -37,7 +39,7 @@ def create_app():
     cors.init_app(app)
     bcrypt.init_app(app)  # Inicializar Bcrypt  
     # Configurar login
-    login_manager.login_view = 'admin.login'
+    login_manager.login_view = 'cliente.login_cliente'
     
     # =============================================
     # IMPORTAR BLUEPRINTS (AHORA SÍ FUNCIONA)
@@ -47,6 +49,7 @@ def create_app():
     from routes.ventas import ventas_bp
     #from routes.cupones import cupones_bp
     from routes.pagos import pagos_bp
+    from routes.catalogo import catalogo_bp
     #from routes.admin import admin_bp
     
     app.register_blueprint(cliente_bp)
@@ -54,16 +57,13 @@ def create_app():
     app.register_blueprint(ventas_bp)
     #app.register_blueprint(cupones_bp)
     app.register_blueprint(pagos_bp)
+    app.register_blueprint(catalogo_bp)
     #app.register_blueprint(admin_bp)
     
     # Rutas principales
     @app.route('/')
     def index():
         return render_template('index.html')
-    
-    @app.route('/catalogo')
-    def catalogo():
-        return render_template('catalogo_cliente.html')
     
     @app.route('/health')
     def health():

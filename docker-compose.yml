@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ============================================
   # BASE DE DATOS COMERCIAL
@@ -43,7 +41,7 @@ services:
   # MICROSERVICIO COMERCIAL
   # ============================================
   comercial:
-    build: ./COMERCIAL
+    build: ./Comercial
     container_name: comercial
     restart: always
     environment:
@@ -83,6 +81,25 @@ services:
       - "5001:5001"
     depends_on:
       - db_inventario
+    networks:
+      - microservicios_net
+
+  # ============================================
+  # API GATEWAY
+  # ============================================
+  gateway:
+    build: ./apiGateway/apiGateway
+    container_name: gateway
+    restart: always
+    environment:
+      COMERCIAL_URL: http://comercial:5000
+      INVENTARIO_URL: http://inventario:5001
+      SECRET_KEY: clave_secreta_gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - comercial
+      - inventario
     networks:
       - microservicios_net
 
