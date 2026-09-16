@@ -13,12 +13,6 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 os.chdir(BASE)
 sys.path.insert(0, BASE)
 
-from app import app
-from extensions import db
-from models.categoria import Categoria
-from models.proveedor import Proveedor
-from models.producto import Producto
-
 RESET = "--reset" in sys.argv
 
 CATEGORIAS = [
@@ -94,6 +88,12 @@ PRODUCTOS = [
 
 
 def main():
+    from app import app
+    from extensions import db
+    from models.categoria import Categoria
+    from models.proveedor import Proveedor
+    from models.producto import Producto
+
     with app.app_context():
         if RESET:
             Producto.query.delete()
@@ -130,7 +130,7 @@ def main():
                 precio_oferta=oferta,
                 cantidad=stock,
                 codigo_barras=codigo,
-                imagen=imagen,
+                imagen=f"{codigo}.svg",
                 destacado=dest,
                 id_categoria=cats[cat],
                 proveedor_id=provs[prov],

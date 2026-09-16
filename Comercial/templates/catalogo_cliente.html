@@ -158,7 +158,7 @@ var productosFiltrados = [];
 // CARGAR PRODUCTOS
 // ===============================
 function cargarProductos() {
-    fetch('/api/productos/catalogo')
+    fetch('/api/productos/catalogo?_=' + Date.now(), { cache: 'no-store' })
         .then(function(res) { return res.json(); })
         .then(function(data) {
             productosOriginal = data;

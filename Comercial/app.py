@@ -69,6 +69,13 @@ def create_app():
     def health():
         return {"status": "ok", "service": "comercial"}, 200
 
+    @app.after_request
+    def add_no_cache_headers(response):
+        if response.mimetype in ('text/html', 'application/json'):
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            response.headers['Pragma'] = 'no-cache'
+        return response
+
     @app.route('/contacto')
     def contacto():
         return render_template('contacto.html')
