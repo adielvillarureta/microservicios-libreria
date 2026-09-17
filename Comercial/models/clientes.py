@@ -12,6 +12,8 @@ class Cliente(db.Model):
     dni = db.Column(db.String(8), unique=True)
     direccion = db.Column(db.String(255))
     clave = db.Column(db.String(255), nullable=False)
+    token_recuperacion = db.Column(db.String(255))
+    token_expiracion = db.Column(db.DateTime)
     
     pedidos = db.relationship('Pedido', back_populates='cliente')
     

@@ -1,12 +1,33 @@
+import os
 import secrets
+import time
 from datetime import datetime, timedelta
 from functools import wraps
 
+import requests
 from flask import redirect, request, session, url_for, flash
 from sqlalchemy import text
 
 from extensions import db
 from models.intentos_login import IntentosLogin
+
+_inventario_url = os.getenv('INVENTARIO_API_URL') or os.getenv('INVENTARIO_URL', 'http://localhost:5001')
+_categorias_cache = {'tiempo': 0, 'data': []}
+
+
+def obtener_categorias():
+    ahora = time.time()
+    if ahora - _categorias_cache['tiempo'] < 30:
+        return _categorias_cache['data']
+    try:
+        respuesta = requests.get(f"{_inventario_url}/api/categorias", timeout=5)
+        if respuesta.status_code == 200:
+            _categorias_cache['data'] = respuesta.json()
+            _categorias_cache['tiempo'] = ahora
+            return _categorias_cache['data']
+    except Exception:
+        pass
+    return []
 
 
 def login_required_cliente(f):

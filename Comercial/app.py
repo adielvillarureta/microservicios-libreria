@@ -44,6 +44,7 @@ def create_app():
     from routes.cupones import cupones_bp
     from routes.pagos import pagos_bp
     from routes.catalogo import catalogo_bp
+    from routes.admin import admin_bp
 
     app.register_blueprint(cliente_bp)
     app.register_blueprint(pedidos_bp)
@@ -51,6 +52,7 @@ def create_app():
     app.register_blueprint(cupones_bp)
     app.register_blueprint(pagos_bp)
     app.register_blueprint(catalogo_bp)
+    app.register_blueprint(admin_bp)
 
     @app.route('/')
     def index():
@@ -83,6 +85,21 @@ def create_app():
                 version = int(os.path.getmtime(archivos[0]))
                 foto_url = url_for('static', filename=f'img/perfiles/{nombre}') + f'?v={version}'
         return {'cliente_foto_url': foto_url}
+
+    @app.context_processor
+    def inject_globales():
+        from datetime import datetime
+        from utils import obtener_categorias
+        return {
+            'categorias': obtener_categorias(),
+            'now': datetime.now()
+        }
+
+    @app.route('/api/bloqueos')
+    def api_bloqueos():
+        from models.bloqueos import Bloqueo
+        bloqueos = Bloqueo.query.filter(Bloqueo.estado == 1).all()
+        return {'cantidad': len(bloqueos), 'bloqueos': []}
 
     with app.app_context():
         from models.clientes import Cliente

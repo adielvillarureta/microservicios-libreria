@@ -60,6 +60,7 @@ services:
       EMAIL_USER: librospe@alwaysdata.net
       EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
       EMAIL_FROM: librospe@alwaysdata.net
+      API_PERU_TOKEN: ${API_PERU_TOKEN:-}
     ports:
       - "5000:5000"
     depends_on:

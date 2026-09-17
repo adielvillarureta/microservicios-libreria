@@ -22,6 +22,19 @@ def catalogo_cliente():
         return render_template("catalogo_cliente.html", categorias=[], productos=[])
 
 
+@catalogo_bp.route("/api/productos/<int:producto_id>/stock")
+def api_producto_stock(producto_id):
+    try:
+        response = requests.get(f"{INVENTARIO_URL}/productos/{producto_id}/stock", timeout=5)
+        if response.status_code == 200:
+            return jsonify(response.json())
+        return jsonify({"error": "Producto no encontrado"}), 404
+    except requests.exceptions.ConnectionError:
+        return jsonify({"error": "El microservicio de Inventario no está disponible"}), 503
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @catalogo_bp.route("/api/productos")
 @catalogo_bp.route("/api/productos/catalogo")
 def api_productos():

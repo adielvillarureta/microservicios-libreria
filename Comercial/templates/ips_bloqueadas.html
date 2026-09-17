@@ -31,7 +31,7 @@
                             <td>{{ ip.intentos }}</td>
                             <td>{{ ip.ips_bloqueadas.strftime('%d/%m/%Y %H:%M:%S') }}</td>
                             <td>
-                                <a href="{{ url_for('desbloquear_ip', ip=ip.ip) }}" 
+                                <a href="/desbloquear-ip/{{ ip.ip }}" 
                                    class="btn btn-sm btn-warning"
                                    onclick="return confirm('¿Estás seguro de desbloquear esta IP?')">
                                     <i class="fas fa-unlock-alt"></i> Desbloquear

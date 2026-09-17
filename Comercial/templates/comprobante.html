@@ -14,9 +14,9 @@
 
                 <div class="card-body p-3 p-md-4">
                     <div class="text-center mb-3 mb-md-4">
-                        <h5 class="fs-6 fs-md-5">{{ venta.Venta.tipo_comprobante|upper }}</h5>
-                        <p class="text-muted small mb-1">N° {{ venta.Venta.numero_comprobante }}</p>
-                        <p class="text-muted small">Fecha: {{ venta.Venta.fecha_venta.strftime('%d/%m/%Y %H:%M') }}</p>
+                        <h5 class="fs-6 fs-md-5">{{ venta.tipo_comprobante|upper }}</h5>
+                        <p class="text-muted small mb-1">N° {{ venta.numero_comprobante }}</p>
+                        <p class="text-muted small">Fecha: {{ venta.fecha_venta.strftime('%d/%m/%Y %H:%M') }}</p>
                     </div>
 
                     <hr class="my-3 my-md-4">
@@ -24,10 +24,10 @@
                     <div class="mb-3 mb-md-4">
                         <h6 class="fw-bold fs-6 fs-md-5"><i class="fas fa-user me-2"></i>DATOS DEL CLIENTE</h6>
                         <div class="small">
-                            <p class="mb-1"><strong>Nombre/Razón Social:</strong> {{ venta.Venta.cliente_nombres or 'Consumidor Final' }} {{ venta.Venta.cliente_apellidos or '' }}</p>
-                            <p class="mb-1"><strong>RUC/DNI:</strong> {% if venta.Venta.cliente_documento and venta.Venta.cliente_documento != '' %}{{ venta.Venta.cliente_documento }}{% else %}—{% endif %}</p>
-                            <p class="mb-1"><strong>Dirección:</strong> {{ venta.Venta.cliente_direccion or 'No registrada' }}</p>
-                            <p class="mb-1"><strong>Email:</strong> {{ venta.Venta.cliente_email or 'No registrado' }}</p>
+                            <p class="mb-1"><strong>Nombre/Razón Social:</strong> {{ venta.cliente_nombres or 'Consumidor Final' }} {{ venta.cliente_apellidos or '' }}</p>
+                            <p class="mb-1"><strong>RUC/DNI:</strong> {% if venta.cliente_documento and venta.cliente_documento != '' %}{{ venta.cliente_documento }}{% else %}—{% endif %}</p>
+                            <p class="mb-1"><strong>Dirección:</strong> {{ venta.cliente_direccion_fiscal or 'No registrada' }}</p>
+                            <p class="mb-1"><strong>Email:</strong> {{ venta.cliente_email or 'No registrado' }}</p>
                         </div>
                     </div>
 
@@ -48,8 +48,8 @@
                                 <tbody>
                                     <tr class="small">
                                         <td><strong>{{ venta.producto_nombre }}</strong></td>
-                                        <td class="text-center">{{ venta.Venta.cantidad }}</td>
-                                        <td class="text-center">S/. {{ "%.2f"|format(venta.precio) }}</td>
+                                        <td class="text-center">{{ venta.cantidad }}</td>
+                                        <td class="text-center">S/. {{ "%.2f"|format(venta.precio_unitario) }}</td>
                                         <td class="text-end">S/. {{ "%.2f"|format(total) }}</td>
                                     </tr>
                                 </tbody>
@@ -67,7 +67,7 @@
 
                     <div class="mb-3 mb-md-4">
                         <h6 class="fw-bold fs-6 fs-md-5"><i class="fas fa-user-tie me-2"></i>ATENDIDO POR</h6>
-                        <p class="small">{{ venta.vendedor_nombres }} {{ venta.vendedor_apellidos }}</p>
+                        <p class="small">{{ venta.vendedor_nombres or '' }} {{ venta.vendedor_apellidos or '' }}</p>
                     </div>
 
                     <div class="text-center mt-3 mt-md-4">
