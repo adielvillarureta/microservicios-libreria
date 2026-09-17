@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#DC2626"/>
+      <stop offset="1" stop-color="#7F1D1D"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="600" fill="url(#g)"/>
+  <text x="300" y="150" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700" fill="#ffffff" opacity="0.85">ARTÍCULOS DE DEVOCIÓN</text>
+  <g transform="translate(300,270)"><rect x="-36" y="-52" width="72" height="168" rx="10" fill="#ffffff"/><ellipse cx="0" cy="-80" rx="18" ry="30" fill="#FFD700"/><ellipse cx="0" cy="-80" rx="8" ry="18" fill="#F97316"/></g>
+  <text x="300" y="420" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="600" fill="#ffffff"><tspan x="300" dy="0">Novenas a María</tspan><tspan x="300" dy="38">Auxiliadora</tspan></text>
+  <text x="300" y="560" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="19" fill="#ffffff" opacity="0.7">Librería Salesiana Don Bosco</text>
+</svg>
