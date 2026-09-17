@@ -11,9 +11,7 @@ class Proveedor(db.Model):
     direccion = db.Column(db.String(255))
     activo = db.Column(db.Boolean, default=True)
     fecha_registro = db.Column(db.DateTime, default=db.func.current_timestamp())
-    
-    #productos = db.relationship('Producto',  lazy=True)
-    
+
     def to_dict(self):
         return {
             'id': self.id,

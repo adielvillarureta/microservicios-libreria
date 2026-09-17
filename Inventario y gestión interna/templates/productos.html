@@ -4,7 +4,6 @@
 
 {% block extra_css %}
 <style>
-    /* ===== ESTILOS ESPECÍFICOS DE PRODUCTOS ===== */
     .badge-categoria {
         display: inline-block;
         font-size: 0.7rem;
@@ -13,14 +12,8 @@
         padding: 0.3rem 0.7rem;
         color: white;
         text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        background: #4F46E5;
     }
-    .badge-categoria-cuadernos { background: #4F46E5; }
-    .badge-categoria-lapiceros { background: #DC2626; }
-    .badge-categoria-papeleria { background: #059669; }
-    .badge-categoria-arte { background: #7C3AED; }
-    .badge-categoria-oficina { background: #D97706; }
-    .badge-categoria-herramientas { background: #6B7280; }
-    .badge-categoria-default { background: #6B7280; }
     
     .table-row-hover:hover { 
         background-color: rgba(212, 175, 55, 0.06);
@@ -173,19 +166,10 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if pr.categoria_rel %}
-                                <span class="badge-categoria badge-categoria-{{ pr.categoria_rel.nombre }}">
-                                    {% if pr.categoria_rel.nombre == 'cuadernos' %}📓
-                                    {% elif pr.categoria_rel.nombre == 'lapiceros' %}✍️
-                                    {% elif pr.categoria_rel.nombre == 'papeleria' %}📄
-                                    {% elif pr.categoria_rel.nombre == 'arte' %}🎨
-                                    {% elif pr.categoria_rel.nombre == 'oficina' %}📎
-                                    {% elif pr.categoria_rel.nombre == 'herramientas' %}🔧
-                                    {% else %}📂{% endif %}
-                                    {{ pr.categoria_rel.nombre }}
-                                </span>
+                                {% if pr.categoria %}
+                                <span class="badge-categoria">{{ pr.categoria.nombre }}</span>
                                 {% else %}
-                                <span class="badge bg-secondary px-2 py-1" style="font-size: 0.7rem;">📦 Sin categoría</span>
+                                <span class="badge bg-secondary px-2 py-1" style="font-size: 0.7rem;">Sin categoría</span>
                                 {% endif %}
                             </td>
                             <td class="small text-secondary d-none d-md-table-cell" style="font-size: 0.75rem;">

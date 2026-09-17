@@ -1,13 +1,10 @@
 services:
-  # ============================================
-  # BASE DE DATOS COMERCIAL
-  # ============================================
   db_comercial:
     image: mysql:8.0
     container_name: db_comercial
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_PASSWORD: rootpass
       MYSQL_DATABASE: comercial_db
       MYSQL_USER: comercial_user
       MYSQL_PASSWORD: comercial_password
@@ -15,18 +12,20 @@ services:
       - "3307:3306"
     volumes:
       - comercial_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpass"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - microservicios_net
 
-  # ============================================
-  # BASE DE DATOS INVENTARIO
-  # ============================================
   db_inventario:
     image: mysql:8.0
     container_name: db_inventario
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_PASSWORD: rootpass
       MYSQL_DATABASE: inventario_db
       MYSQL_USER: inventario_user
       MYSQL_PASSWORD: inventario_password
@@ -34,18 +33,21 @@ services:
       - "3308:3306"
     volumes:
       - inventario_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpass"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - microservicios_net
 
-  # ============================================
-  # MICROSERVICIO COMERCIAL
-  # ============================================
   comercial:
     build: ./Comercial
     container_name: comercial
     restart: always
     environment:
       FLASK_ENV: production
+      DEBUG: "false"
       SECRET_KEY: clave_secreta_comercial
       MYSQL_DATABASE: comercial_db
       MYSQL_USER: comercial_user
@@ -53,40 +55,42 @@ services:
       MYSQL_HOST: db_comercial
       MYSQL_PORT: 3306
       INVENTARIO_API_URL: http://inventario:5001
+      EMAIL_HOST: smtp-librospe.alwaysdata.net
+      EMAIL_PORT: 587
+      EMAIL_USER: librospe@alwaysdata.net
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      EMAIL_FROM: librospe@alwaysdata.net
     ports:
       - "5000:5000"
     depends_on:
-      - db_comercial
-      - inventario
+      db_comercial:
+        condition: service_healthy
+      inventario:
+        condition: service_started
     networks:
       - microservicios_net
 
-  # ============================================
-  # MICROSERVICIO INVENTARIO
-  # ============================================
   inventario:
     build: ./Inventario y gestión interna
     container_name: inventario
     restart: always
     environment:
       FLASK_ENV: production
+      DEBUG: "false"
       SECRET_KEY: clave_secreta_inventario
       MYSQL_DATABASE: inventario_db
       MYSQL_USER: inventario_user
       MYSQL_PASSWORD: inventario_password
       MYSQL_HOST: db_inventario
       MYSQL_PORT: 3306
-      COMERCIAL_API_URL: http://comercial:5000
     ports:
       - "5001:5001"
     depends_on:
-      - db_inventario
+      db_inventario:
+        condition: service_healthy
     networks:
       - microservicios_net
 
-  # ============================================
-  # API GATEWAY
-  # ============================================
   gateway:
     build: ./apiGateway/apiGateway
     container_name: gateway
@@ -98,14 +102,13 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - comercial
-      - inventario
+      comercial:
+        condition: service_started
+      inventario:
+        condition: service_started
     networks:
       - microservicios_net
 
-  # ============================================
-  # PHPMYADMIN (Opcional, para ver las BD)
-  # ============================================
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: phpmyadmin

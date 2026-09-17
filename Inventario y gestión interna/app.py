@@ -1,82 +1,62 @@
 import os
 from datetime import datetime
-from flask import Flask, render_template, session, redirect, url_for, request
-from flask_login import UserMixin
-from werkzeug.security import generate_password_hash, check_password_hash
+
 from dotenv import load_dotenv
+from flask import Flask, render_template, session, redirect, url_for
+from werkzeug.security import generate_password_hash
 
 from extensions import db, login_manager, bcrypt, cors
 
 load_dotenv()
 
 
+@login_manager.user_loader
+def load_usuario(user_id):
+    from models.usuarioSistema import UsuarioSistema
+    return UsuarioSistema.query.get(int(user_id))
+
+
 def create_app():
     app = Flask(__name__, template_folder='templates')
-    
-    # Configuración
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'clave_secreta_inventario')
+
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
     app.config['SQLALCHEMY_DATABASE_URI'] = (
         f"mysql+pymysql://{os.getenv('MYSQL_USER', 'root')}:{os.getenv('MYSQL_PASSWORD', '')}"
         f"@{os.getenv('MYSQL_HOST', 'localhost')}:{os.getenv('MYSQL_PORT', '3306')}/{os.getenv('MYSQL_DATABASE', 'inventario_db')}"
     )
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    if os.getenv('DATABASE_URL'):
-        app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
-    
-    # Inicializar extensiones
+
     db.init_app(app)
     login_manager.init_app(app)
     bcrypt.init_app(app)
     cors.init_app(app)
-    
-    # Configurar login
     login_manager.login_view = 'usuario.login'
-    
-    # ============================================
-    # USER LOADER (necesario para Flask-Login)
-    # ============================================
-    class User(UserMixin):
-        def __init__(self, id):
-            self.id = id
-    
-    @login_manager.user_loader
-    def load_user(user_id):
-        return User(user_id)
-    
-    # ============================================
-    # IMPORTAR MODELOS
-    # ============================================
+
     from models.categoria import Categoria
     from models.producto import Producto
     from models.proveedor import Proveedor
     from models.usuarioSistema import UsuarioSistema
-    
-    # ============================================
-    # REGISTRAR BLUEPRINTS
-    # ============================================
+
     from routes.producto import producto_bp
     from routes.proveedores import proveedores_bp
     from routes.bloqueos import bloqueos_bp
     from routes.usuario import usuario_bp
-    
+
     app.register_blueprint(producto_bp)
     app.register_blueprint(proveedores_bp)
     app.register_blueprint(bloqueos_bp)
     app.register_blueprint(usuario_bp)
-    
-    # ============================================
-    # RUTA PRINCIPAL (Panel)
-    # ============================================
+
     @app.route('/')
     def dashboard():
         if 'usuario_id' not in session:
             return redirect(url_for('usuario.login'))
-        
+
         total_productos = Producto.query.count()
         stock_bajo = Producto.query.filter(Producto.cantidad <= 5, Producto.cantidad > 0).all()
         stock_critico = Producto.query.filter(Producto.cantidad == 0).all()
         total_proveedores = Proveedor.query.count()
-        
+
         return render_template(
             'dashboard.html',
             total_ventas_hoy=0,
@@ -98,14 +78,11 @@ def create_app():
             graph_estados={"data": [], "layout": {}},
             ahora_peru=datetime.now()
         )
-    
+
     @app.route('/health')
     def health():
         return {"status": "ok", "service": "inventario"}, 200
-    
-    # ============================================
-    # CREAR TABLAS Y USUARIO ADMIN
-    # ============================================
+
     with app.app_context():
         db.create_all()
         if not UsuarioSistema.query.filter_by(correo='admin@admin.com').first():
@@ -118,12 +95,11 @@ def create_app():
             )
             db.session.add(admin)
             db.session.commit()
-            print("✅ Usuario admin creado: admin@admin.com / admin123")
-    
+
     return app
 
 
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=os.getenv('DEBUG', 'false').lower() == 'true')

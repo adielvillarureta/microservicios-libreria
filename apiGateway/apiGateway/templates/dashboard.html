@@ -313,14 +313,12 @@
 
                 document.getElementById('fechaHora').textContent = new Date().toLocaleString('es-PE');
 
-                // Comercial
                 const c = data.services.comercial;
                 const badgeC = document.getElementById('badgeComercial');
                 badgeC.className = 'badge ' + (c.status === 'active' ? 'bg-success' : 'bg-danger');
                 badgeC.textContent = c.status === 'active' ? 'ACTIVO' : 'INACTIVO';
                 document.getElementById('latenciaComercial').textContent = c.latency_ms != null ? c.latency_ms : '—';
 
-                // Inventario
                 const i = data.services.inventario;
                 const badgeI = document.getElementById('badgeInventario');
                 badgeI.className = 'badge ' + (i.status === 'active' ? 'bg-success' : 'bg-danger');

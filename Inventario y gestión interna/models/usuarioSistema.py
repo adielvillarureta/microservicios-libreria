@@ -1,5 +1,6 @@
-from extensions import db  # ✅ LO CORRECTO
+from extensions import db
 from flask_login import UserMixin
+
 
 class UsuarioSistema(db.Model, UserMixin):
     __tablename__ = 'usuarios_sistema'

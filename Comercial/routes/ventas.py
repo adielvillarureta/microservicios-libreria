@@ -1,8 +1,10 @@
-from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
-from extensions import db  # ✅ LA SOLUCIÓN
+from flask import Blueprint, redirect, render_template, request, session, url_for
+
+from extensions import db
 from models.ventas import Venta
 
 ventas_bp = Blueprint('ventas', __name__)
+
 
 @ventas_bp.route('/ventas/nueva', methods=['GET', 'POST'])
 def nueva_venta():
@@ -23,13 +25,15 @@ def nueva_venta():
         )
         db.session.add(venta)
         db.session.commit()
-        return redirect(url_for('comprobante', venta_id=venta.id))
+        return redirect(url_for('ventas.comprobante', venta_id=venta.id))
     return render_template('ventas_form.html')
+
 
 @ventas_bp.route('/ventas')
 def listar_ventas():
     ventas = Venta.query.all()
     return render_template('ventas.html', ventas=ventas)
+
 
 @ventas_bp.route('/comprobante/<int:venta_id>')
 def comprobante(venta_id):

@@ -1,8 +1,9 @@
-from extensions import db  # ✅ LO CORRECTO
+from extensions import db
+
 
 class Producto(db.Model):
     __tablename__ = 'productos'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(200), nullable=False)
     descripcion = db.Column(db.Text)
@@ -12,11 +13,10 @@ class Producto(db.Model):
     codigo_barras = db.Column(db.String(50), unique=True)
     imagen = db.Column(db.String(255))
     destacado = db.Column(db.Boolean, default=False)
-    
-    # Relaciones
+
     id_categoria = db.Column(db.Integer, db.ForeignKey('categorias.id_categoria'))
     categoria = db.relationship('Categoria')
-    
+
     proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedores.id'))
     proveedor = db.relationship('Proveedor')
     

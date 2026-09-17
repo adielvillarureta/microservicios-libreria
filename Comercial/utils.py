@@ -1,34 +1,30 @@
-from flask import session, redirect, url_for, flash, request
-from functools import wraps
+import secrets
 from datetime import datetime, timedelta
+from functools import wraps
+
+from flask import redirect, request, session, url_for, flash
+from sqlalchemy import text
+
 from extensions import db
 from models.intentos_login import IntentosLogin
-from sqlalchemy import text
-import secrets
 
-# ============================================
-# DECORADOR: Proteger rutas de cliente
-# ============================================
+
 def login_required_cliente(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if "cliente_id" not in session:
-            flash("❌ Debes iniciar sesión para acceder", "warning")
+            flash("Debes iniciar sesión para acceder", "warning")
             return redirect(url_for("cliente.login_cliente"))
         return f(*args, **kwargs)
     return decorated_function
 
-# ============================================
-# OBTENER IP DEL CLIENTE
-# ============================================
+
 def obtener_ip_cliente():
     if request.headers.get('X-Forwarded-For'):
         return request.headers.get('X-Forwarded-For').split(',')[0].strip()
     return request.remote_addr or "0.0.0.0"
 
-# ============================================
-# VERIFICAR BLOQUEOS
-# ============================================
+
 def verificar_bloqueo_ip(ip):
     try:
         resultado = db.session.execute(text("""
@@ -43,13 +39,13 @@ def verificar_bloqueo_ip(ip):
     except Exception:
         return False
 
+
 def verificar_bloqueo_email(email):
     try:
         registro = IntentosLogin.query.filter_by(email=email).first()
         if registro and registro.email_bloqueado:
             if registro.email_bloqueado > datetime.now():
                 return True
-        # Verificar bloqueo permanente en tabla bloqueos
         resultado = db.session.execute(text("""
             SELECT id FROM bloqueos
             WHERE email = :email
@@ -61,9 +57,7 @@ def verificar_bloqueo_email(email):
     except Exception:
         return False
 
-# ============================================
-# LIMPIAR BLOQUEOS EXPIRADOS
-# ============================================
+
 def limpiar_bloqueos_expirados():
     try:
         db.session.execute(text("""
@@ -76,7 +70,6 @@ def limpiar_bloqueos_expirados():
         """))
         db.session.commit()
 
-        # Limpiar bloqueos de email expirados
         registros = IntentosLogin.query.filter(
             IntentosLogin.email_bloqueado.isnot(None),
             IntentosLogin.email_bloqueado < datetime.now()
@@ -88,9 +81,7 @@ def limpiar_bloqueos_expirados():
     except Exception:
         db.session.rollback()
 
-# ============================================
-# REGISTRAR INTENTO FALLIDO
-# ============================================
+
 def registrar_intento_fallido(email, ip, es_cliente=True):
     resultado = {
         "bloqueado": False,
@@ -112,14 +103,12 @@ def registrar_intento_fallido(email, ip, es_cliente=True):
         registro.ip = ip
         registro.fecha_ultimo_intento = datetime.now()
 
-        # Bloqueo temporal por email (3 intentos)
         if registro.intentos >= 3:
             registro.email_bloqueado = datetime.now() + timedelta(minutes=10)
             resultado["bloqueado"] = True
             resultado["tipo"] = "email"
             resultado["mensaje"] = "Cuenta bloqueada temporalmente por 10 minutos."
 
-        # Bloqueo permanente (5 intentos totales)
         if registro.intentos_totales >= 5:
             db.session.execute(text("""
                 INSERT INTO bloqueos (email, ip, tipo_usuario, motivo, permanente, estado, fecha_bloqueo)
@@ -141,9 +130,7 @@ def registrar_intento_fallido(email, ip, es_cliente=True):
 
     return resultado
 
-# ============================================
-# LIMPIAR INTENTOS EXITOSOS
-# ============================================
+
 def limpiar_intentos_exitosos(email, ip):
     try:
         registro = IntentosLogin.query.filter_by(email=email).first()
@@ -156,8 +143,6 @@ def limpiar_intentos_exitosos(email, ip):
     except Exception:
         db.session.rollback()
 
-# ============================================
-# GENERAR TOKEN DE RECUPERACIÓN
-# ============================================
+
 def generar_token_recuperacion():
     return secrets.token_urlsafe(32)

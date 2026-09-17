@@ -6,7 +6,7 @@ class Cupon(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(50), unique=True, nullable=False)
-    tipo = db.Column(db.String(20), default='porcentaje')  # 'porcentaje' o 'fijo'
+    tipo = db.Column(db.String(20), default='porcentaje')
     valor = db.Column(db.Float, default=0.0)
     minimo_compra = db.Column(db.Float, default=0.0)
     usos_maximos = db.Column(db.Integer, default=100)

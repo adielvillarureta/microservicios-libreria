@@ -219,7 +219,7 @@
         <div class="col-12 col-md-6">
             <div class="card shadow h-100">
                 <div class="card-header bg-white py-2 py-md-3">
-                    <h5 class="mb-0 fs-6 fs-md-5"><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Stock Bajo (≤ 10)</h5>
+                    <h5 class="mb-0 fs-6 fs-md-5"><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Stock Bajo (≤ 5)</h5>
                 </div>
                 <div class="card-body p-2 p-md-3" style="max-height: 250px; overflow-y: auto;">
                     {% if stock_bajo %}
@@ -264,7 +264,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Gráfico de Ventas
     try {
-        const ventasData = {{ graph_ventas|safe }};
+        const ventasData = {{ graph_ventas|tojson }};
         if (ventasData && ventasData.data) {
             Plotly.newPlot('graficoVentas', ventasData.data, ventasData.layout, {
                 responsive: true,
@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Gráfico Top Productos
     try {
-        const topData = {{ graph_top|safe }};
+        const topData = {{ graph_top|tojson }};
         if (topData && topData.data) {
             Plotly.newPlot('graficoTop', topData.data, topData.layout, {
                 responsive: true,
@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Gráfico Categorías
     try {
-        const catData = {{ graph_cat|safe }};
+        const catData = {{ graph_cat|tojson }};
         if (catData && catData.data) {
             Plotly.newPlot('graficoCategoria', catData.data, catData.layout, {
                 responsive: true,
@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Gráfico Estados
     try {
-        const estadosData = {{ graph_estados|safe }};
+        const estadosData = {{ graph_estados|tojson }};
         if (estadosData && estadosData.data) {
             Plotly.newPlot('graficoEstados', estadosData.data, estadosData.layout, {
                 responsive: true,

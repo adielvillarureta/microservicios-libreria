@@ -1,8 +1,3 @@
-# Genera imágenes SVG coherentes (ícono por categoría + nombre) para cada
-# producto del catálogo, en Comercial/static/img/productos/<codigo_barras>.svg
-#
-# Uso:  py generar_imagenes_productos.py
-
 import os
 import sys
 import math

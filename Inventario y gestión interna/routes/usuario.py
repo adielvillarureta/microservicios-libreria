@@ -1,9 +1,9 @@
-from flask import Blueprint, request, jsonify, render_template, redirect, url_for, session
-from extensions import db
-from models.usuarioSistema import UsuarioSistema
+from flask import Blueprint, render_template, request, redirect, url_for, session
+
 from services.authService import AuthService
 
 usuario_bp = Blueprint('usuario', __name__)
+
 
 @usuario_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -21,6 +21,7 @@ def login():
         return render_template('login.html', error="Credenciales incorrectas")
 
     return render_template('login.html')
+
 
 @usuario_bp.route('/logout')
 def logout():

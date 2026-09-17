@@ -1,52 +1,42 @@
-# Comercial/services/emailService.py
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import os
-from datetime import datetime
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp-librospe.alwaysdata.net')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USER = os.getenv('EMAIL_USER', 'librospe@alwaysdata.net')
-EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD', 'Ventas2026!')
+EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
 EMAIL_FROM = os.getenv('EMAIL_FROM', 'librospe@alwaysdata.net')
 
-def enviar_comprobante_email(destinatario, cliente_nombre, tipo_comprobante, 
+
+def enviar_comprobante_email(destinatario, cliente_nombre, tipo_comprobante,
                              numero_comprobante, fecha, productos, total_venta):
-    """Envía el comprobante por correo electrónico"""
+    if not destinatario or '@' not in destinatario or not EMAIL_PASSWORD:
+        return False
+
+    msg = MIMEMultipart()
+    msg['From'] = EMAIL_FROM
+    msg['To'] = destinatario
+    msg['Subject'] = f"{tipo_comprobante.upper()} ELECTRÓNICA N° {numero_comprobante}"
+
+    html = generar_html_comprobante(cliente_nombre, tipo_comprobante,
+                                    numero_comprobante, fecha, productos, total_venta)
+    msg.attach(MIMEText(html, 'html'))
+
     try:
-        if not destinatario or '@' not in destinatario:
-            print(f"❌ Email inválido: {destinatario}")
-            return False
-        
-        msg = MIMEMultipart()
-        msg['From'] = EMAIL_FROM
-        msg['To'] = destinatario
-        msg['Subject'] = f"{tipo_comprobante.upper()} ELECTRÓNICA N° {numero_comprobante}"
-        
-        html = generar_html_comprobante(cliente_nombre, tipo_comprobante, 
-                                       numero_comprobante, fecha, productos, total_venta)
-        
-        msg.attach(MIMEText(html, 'html'))
-        
-        print(f"📧 Enviando a {destinatario}...")
         server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT)
         server.starttls()
         server.login(EMAIL_USER, EMAIL_PASSWORD)
         server.send_message(msg)
         server.quit()
-        
-        print(f"✅ Correo enviado a {destinatario}")
         return True
-        
-    except Exception as e:
-        print(f"❌ Error al enviar correo: {e}")
+    except Exception:
         return False
 
-def generar_html_comprobante(cliente_nombre, tipo_comprobante, numero_comprobante, 
+
+def generar_html_comprobante(cliente_nombre, tipo_comprobante, numero_comprobante,
                              fecha, productos, total_venta):
-    """Genera el HTML del comprobante"""
-    
     productos_html = ""
     for p in productos:
         productos_html += f"""
@@ -57,7 +47,7 @@ def generar_html_comprobante(cliente_nombre, tipo_comprobante, numero_comprobant
             <td style="padding: 8px; text-align: right;">S/. {p['total']:.2f}</td>
         </tr>
         """
-    
+
     return f"""
     <!DOCTYPE html>
     <html>
@@ -83,7 +73,7 @@ def generar_html_comprobante(cliente_nombre, tipo_comprobante, numero_comprobant
         <div class="content">
             <p><strong>📅 Fecha:</strong> {fecha.strftime('%d/%m/%Y %H:%M:%S')}</p>
             <p><strong>👤 Cliente:</strong> {cliente_nombre or 'Consumidor Final'}</p>
-            
+
             <table>
                 <thead>
                     <tr>
@@ -97,11 +87,11 @@ def generar_html_comprobante(cliente_nombre, tipo_comprobante, numero_comprobant
                     {productos_html}
                 </tbody>
             </table>
-            
+
             <div class="total">
                 <p><strong>TOTAL: S/. {total_venta:.2f}</strong></p>
             </div>
-            
+
             <p style="text-align: center; margin-top: 25px;">
                 <strong>✨ ¡Gracias por su compra! ✨</strong><br>
                 <small>Este es un comprobante de venta electrónico válido</small>
