@@ -11,6 +11,7 @@ class Pedido(db.Model):
     estado = db.Column(db.String(20), default='pendiente')
     tipo_entrega = db.Column(db.String(20), default='recojo')
     direccion_entrega = db.Column(db.String(255))
+    metodo_pago = db.Column(db.String(30))
     
     cliente = db.relationship('Cliente', back_populates='pedidos')
     detalles = db.relationship('DetallePedido', back_populates='pedido')

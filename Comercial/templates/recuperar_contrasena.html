@@ -205,9 +205,14 @@
     }
     
     .card-header {
-        background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+        background: linear-gradient(135deg, #0F2B5E 0%, #1E3A8A 100%);
         border: none;
+        border-bottom: 3px solid var(--salesiano-gold);
         padding: 1.5rem;
+    }
+
+    .card-header i {
+        color: var(--salesiano-gold);
     }
     
     .card-header h4 {
@@ -239,17 +244,19 @@
     }
     
     .btn-primary {
-        background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+        background: linear-gradient(135deg, #E8C766 0%, #D4AF37 100%);
         border: none;
         border-radius: 12px;
         font-weight: 600;
+        color: #0F2B5E;
         transition: all 0.2s ease;
     }
     
     .btn-primary:hover {
-        background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+        background: linear-gradient(135deg, #D4AF37 0%, #c8a82e 100%);
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+        box-shadow: 0 5px 15px rgba(212, 175, 55, 0.5);
+        color: #0F2B5E;
     }
     
     .btn-secondary {
@@ -322,8 +329,8 @@
     <div class="row justify-content-center">
         <div class="col-11 col-sm-10 col-md-8 col-lg-6 col-xl-5">
             <div class="card shadow-lg border-0">
-                <div class="card-header bg-primary text-white text-center py-3 py-md-4">
-                    <i class="fas fa-key fa-2x mb-2 d-block"></i>
+                <div class="card-header text-white text-center py-3 py-md-4">
+                    <i class="fas fa-key fa-2x mb-2 d-block" style="color: var(--salesiano-gold);"></i>
                     <h4 class="mb-0 fw-bold">¿Olvidaste tu contraseña?</h4>
                     <p class="mb-0 mt-2 small opacity-75">Recupérala fácilmente</p>
                 </div>
@@ -349,7 +356,7 @@
                     <form method="POST" id="resetForm" class="needs-validation" novalidate>
                         <div class="mb-4">
                             <label class="form-label fw-semibold mb-2">
-                                <i class="fas fa-envelope me-2 text-primary"></i>
+                                <i class="fas fa-envelope me-2" style="color: var(--salesiano-gold);"></i>
                                 Correo Electrónico
                             </label>
                             <input type="email" name="email" id="emailInput" 

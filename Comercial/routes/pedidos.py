@@ -12,7 +12,7 @@ from utils import login_required_cliente, obtener_categorias
 
 pedidos_bp = Blueprint('pedidos_bp', __name__)
 
-API_TOKEN = os.getenv('API_PERU_TOKEN')
+API_TOKEN = os.getenv('API_PERU_TOKEN') or os.getenv('API_TOKEN') or '1a6fa9efa854259ed29a4c5fa8401bb9d61d7863170d97c798822b5cf377'
 
 
 @pedidos_bp.route('/carrito')
@@ -26,6 +26,14 @@ def checkout():
     if session.get('cliente_id'):
         cliente = Cliente.query.get(session['cliente_id'])
     return render_template('checkout.html', cliente=cliente, categorias=obtener_categorias())
+
+
+@pedidos_bp.route('/pago')
+def pago():
+    cliente = None
+    if session.get('cliente_id'):
+        cliente = Cliente.query.get(session['cliente_id'])
+    return render_template('pago.html', cliente=cliente, categorias=obtener_categorias())
 
 
 @pedidos_bp.route('/acerca-de')
@@ -77,6 +85,7 @@ def crear_pedido():
     cliente_data = data.get('cliente') or {}
     items = data.get('items') or []
     tipo_entrega = data.get('tipo_entrega', 'recojo')
+    metodo_pago = data.get('metodo_pago', '').strip()
 
     if not items:
         return jsonify({'success': False, 'error': 'El carrito está vacío'}), 400
@@ -96,17 +105,27 @@ def crear_pedido():
         cliente = Cliente.query.get(session['cliente_id'])
 
     if not cliente:
+        dni_valido = documento if (len(documento) == 8 and not Cliente.query.filter_by(dni=documento).first()) else None
         cliente = Cliente(
             nombres=nombre,
             apellidos=apellido,
             email=email,
             telefono=telefono,
-            dni=documento if len(documento) == 8 else None,
+            dni=dni_valido,
             direccion=direccion,
             clave=os.urandom(24).hex()
         )
         db.session.add(cliente)
         db.session.flush()
+
+    if len(documento) == 8 and cliente.dni != documento:
+        duplicado_dni = Cliente.query.filter(Cliente.dni == documento, Cliente.id != cliente.id).first()
+        if not duplicado_dni:
+            cliente.dni = documento
+    if not cliente.telefono and telefono:
+        cliente.telefono = telefono
+    if not cliente.direccion and direccion:
+        cliente.direccion = direccion
 
     total = 0.0
     for item in items:
@@ -114,12 +133,19 @@ def crear_pedido():
         precio = float(item.get('precio', 0))
         total += cantidad * precio
 
+    if tipo_entrega == 'delivery':
+        total += 5.0
+
+    if metodo_pago == 'contraentrega' and tipo_entrega == 'delivery':
+        total += 3.0
+
     pedido = Pedido(
         cliente_id=cliente.id,
         total=total,
         estado='pendiente',
         tipo_entrega=tipo_entrega,
-        direccion_entrega=direccion
+        direccion_entrega=direccion,
+        metodo_pago=metodo_pago or None
     )
     db.session.add(pedido)
     db.session.flush()
@@ -156,7 +182,7 @@ def crear_pedido():
     db.session.add(venta)
     db.session.commit()
 
-    return jsonify({'success': True, 'pedido_id': pedido.id})
+    return jsonify({'success': True, 'pedido_id': pedido.id, 'total': total})
 
 
 @pedidos_bp.route('/pedidos/cambiar-estado/<int:pedido_id>', methods=['POST'])
@@ -175,41 +201,65 @@ def cambiar_estado_pedido(pedido_id):
     return response if request.headers.get('X-Requested-With') == 'XMLHttpRequest' else redirect('/pedidos/detalle/' + str(pedido.id))
 
 
-def _consultar_documento(url, numero):
-    if not API_TOKEN:
+def _consultar_documento(endpoint, payload_key, numero):
+    token = API_TOKEN
+    if not token:
         return {'success': False, 'error': 'Servicio no configurado'}
+    url = f'https://api.apiperu.pe/{endpoint}'
     try:
-        resp = requests.get(url + numero, headers={'Authorization': f'Bearer {API_TOKEN}'}, timeout=10)
-        if resp.status_code != 200:
-            return {'success': False, 'error': 'No encontrado'}
-        data = resp.json()
-        if data.get('success') is False:
-            return {'success': False, 'error': data.get('message', 'No encontrado')}
-        return {'success': True, 'data': data}
-    except Exception:
-        return {'success': False, 'error': 'Error de conexión'}
+        resp = requests.post(
+            url,
+            json={payload_key: numero},
+            headers={
+                'Authorization': f'Bearer {token}',
+                'Content-Type': 'application/json'
+            },
+            timeout=10
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get('success') is False:
+                return {'success': False, 'error': data.get('message', 'No encontrado')}
+            return {'success': True, 'data': data.get('data', data)}
+        return {'success': False, 'error': 'No encontrado'}
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+
+
+def _nombre_v1(nombre_completo):
+    partes = (nombre_completo or '').split()
+    if len(partes) >= 3:
+        return ' '.join(partes[2:]), ' '.join(partes[:2])
+    if len(partes) == 2:
+        return partes[0], partes[1]
+    if partes:
+        return partes[0], ''
+    return '', ''
 
 
 @pedidos_bp.route('/api/consultar-dni/<documento>')
 def consultar_dni(documento):
-    resultado = _consultar_documento('https://api.apis.net.pe/v2/reniec/dni?numero=', documento)
+    resultado = _consultar_documento('dni', 'dni', documento)
     if not resultado['success']:
         return jsonify(resultado)
     data = resultado['data']
-    return jsonify({
-        'success': True,
-        'nombres': data.get('nombres'),
-        'apellidos': f"{data.get('apellidoPaterno', '')} {data.get('apellidoMaterno', '')}".strip()
-    })
+    nombres = data.get('nombres') or ''
+    apellidos = f"{data.get('apellido_paterno', '')} {data.get('apellido_materno', '')}".strip()
+    if not apellidos and data.get('nombre_completo'):
+        nombres, apellidos = _nombre_v1(data.get('nombre_completo'))
+    if not nombres and data.get('nombre'):
+        nombres, apellidos = _nombre_v1(data.get('nombre'))
+    return jsonify({'success': True, 'nombres': nombres, 'apellidos': apellidos})
 
 
 @pedidos_bp.route('/api/consultar-ruc/<documento>')
 def consultar_ruc(documento):
-    resultado = _consultar_documento('https://api.apis.net.pe/v2/sunat/ruc?numero=', documento)
+    resultado = _consultar_documento('ruc', 'ruc', documento)
     if not resultado['success']:
         return jsonify(resultado)
     data = resultado['data']
+    razon = data.get('nombre_o_razon_social') or data.get('razon_social') or data.get('nombre') or data.get('nombre_comercial') or ''
     return jsonify({
         'success': True,
-        'razon_social': data.get('nombre') or data.get('razonSocial')
+        'razon_social': razon
     })

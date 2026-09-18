@@ -2,6 +2,111 @@
 {% block titulito %}🏪 Tienda Online - Librería Salesiana{% endblock %}
 
 {% block contenido %}
+<!-- ===== HERO ===== -->
+<section class="hero-catalogo mb-4 rounded-4 overflow-hidden position-relative text-white">
+    <div class="hero-overlay"></div>
+    <div class="hero-patron"></div>
+    <div class="hero-float hero-float-1"><i class="fas fa-book-open"></i></div>
+    <div class="hero-float hero-float-2"><i class="fas fa-bible"></i></div>
+    <div class="hero-float hero-float-3"><i class="fas fa-feather-alt"></i></div>
+    <div class="container position-relative py-4 py-md-5 py-lg-6" style="padding-top:3rem; padding-bottom:3rem;">
+        <div class="row align-items-center g-4">
+            <div class="col-12 col-lg-8">
+                <span class="hero-kicker"><i class="fas fa-book-open me-2"></i>Bienvenido a nuestra tienda</span>
+                <h1 class="hero-title mb-3">Fe, lectura y devoción<br><span class="hero-title-gold">para toda la familia</span></h1>
+                <p class="hero-text mb-4">Libros, Biblias, artículos religiosos y regalos Don Bosco con la calidad
+                    y el servicio que nos caracteriza desde hace más de un siglo.</p>
+
+                <div class="hero-busqueda mb-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="search" id="busquedaHero" class="form-control"
+                               placeholder="Busca tu libro, biblia o artículo religioso..." autocomplete="off"
+                               onkeydown="if(event.key==='Enter'){buscarDesdeHero();return false;}">
+                        <button class="btn" type="button" onclick="buscarDesdeHero()"><i class="fas fa-arrow-right me-1 d-none d-sm-inline"></i>Buscar</button>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-3 flex-column flex-sm-row align-items-start align-items-sm-center">
+                    <a href="#productosGrid" class="btn btn-gold btn-lg px-4" onclick="document.getElementById('productosGrid').scrollIntoView({behavior:'smooth'})">
+                        <i class="fas fa-store me-2"></i>Ver productos
+                    </a>
+                    <a href="/acerca-de" class="btn btn-outline-light btn-lg px-4 rounded-pill">
+                        <i class="fas fa-info-circle me-2"></i>Conócenos
+                    </a>
+                </div>
+            </div>
+            <div class="col-12 col-lg-4 d-none d-lg-block">
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <span class="stat-num">+100</span>
+                        <span class="stat-txt">años de tradición</span>
+                    </div>
+                    <div class="hero-stat">
+                        <span class="stat-num">Miles</span>
+                        <span class="stat-txt">de clientes felices</span>
+                    </div>
+                    <div class="hero-stat">
+                        <span class="stat-num">100%</span>
+                        <span class="stat-txt">compra protegida</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== NAV RÁPIDA DE CATEGORÍAS ===== -->
+<section class="mb-4">
+    <div class="categorias-rapidas d-flex gap-2 overflow-auto pb-2">
+        <button type="button" class="pill-categoria pill-active" data-id="0" onclick="filtrarPorCategoria(null)">
+            <i class="fas fa-store me-1"></i>Todo
+        </button>
+        {% for categoria in categorias %}
+        {% set c = categoria.nombre|lower %}
+        <button type="button" class="pill-categoria" data-id="{{ categoria.id_categoria }}" onclick="filtrarPorCategoria({{ categoria.id_categoria }})">
+            {% if 'libro' in c %}📚
+            {% elif 'biblia' in c or 'catecismo' in c %}📖
+            {% elif 'estatua' in c or 'imagen' in c %}🗿
+            {% elif 'auxiliadora' in c or 'mar' in c %}🌹
+            {% elif 'rosario' in c or 'escapulario' in c %}📿
+            {% elif 'medalla' in c or 'crucifijo' in c or 'cruz' in c %}✝️
+            {% elif 'devoci' in c %}🕯️
+            {% else %}📂{% endif %}
+            {{ categoria.nombre|capitalize }}
+        </button>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- ===== FRANJA DE BENEFICIOS ===== -->
+<section class="row g-2 g-md-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="beneficio-card">
+            <i class="fas fa-truck"></i>
+            <div><strong>Envío a domicilio</strong><small>Lima y provincias</small></div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="beneficio-card">
+            <i class="fas fa-shield-alt"></i>
+            <div><strong>Compra segura</strong><small>Tus datos protegidos</small></div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="beneficio-card">
+            <i class="fas fa-tags"></i>
+            <div><strong>Ofertas y cupones</strong><small>Ahorra en cada compra</small></div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="beneficio-card">
+            <i class="fas fa-store"></i>
+            <div><strong>Recojo en tienda</strong><small>Av. Don Bosco 123</small></div>
+        </div>
+    </div>
+</section>
+
 <div class="container-fluid py-3 py-md-4">
     <div class="row">
         <!-- Panel de Filtros - Lado Izquierdo -->
@@ -14,7 +119,7 @@
                     <!-- Búsqueda por nombre -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold small text-uppercase text-muted">
-                            <i class="fas fa-search me-1 text-primary"></i> Buscar
+                            <i class="fas fa-search me-1" style="color: var(--salesiano-gold);"></i> Buscar
                         </label>
                         <input type="text" id="filtroBuscar" class="form-control form-control-sm rounded-pill" 
                                placeholder="🔍 Nombre del producto..." onkeyup="if(event.key==='Enter') aplicarFiltros();">
@@ -23,7 +128,7 @@
                     <!-- Filtro por categoría -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold small text-uppercase text-muted">
-                            <i class="fas fa-folder me-1 text-primary"></i> Categoría
+                            <i class="fas fa-folder me-1" style="color: var(--salesiano-gold);"></i> Categoría
                         </label>
                         <select id="filtroCategoria" class="form-select form-select-sm rounded-pill" onchange="aplicarFiltros()">
                             <option value="">📂 Todas las categorías</option>
@@ -47,7 +152,7 @@
                     <!-- Filtro por precio (rango) -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold small text-uppercase text-muted">
-                            <i class="fas fa-coins me-1 text-primary"></i> Precio
+                            <i class="fas fa-coins me-1" style="color: var(--salesiano-gold);"></i> Precio
                         </label>
                         <div class="row g-2">
                             <div class="col-6">
@@ -68,7 +173,7 @@
                     <!-- Filtro por stock -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold small text-uppercase text-muted">
-                            <i class="fas fa-boxes me-1 text-primary"></i> Disponibilidad
+                            <i class="fas fa-boxes me-1" style="color: var(--salesiano-gold);"></i> Disponibilidad
                         </label>
                         <div class="d-flex gap-2 flex-wrap">
                             <div class="form-check">
@@ -89,7 +194,7 @@
                     <!-- Ordenar -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold small text-uppercase text-muted">
-                            <i class="fas fa-sort-amount-down me-1 text-primary"></i> Ordenar por
+                            <i class="fas fa-sort-amount-down me-1" style="color: var(--salesiano-gold);"></i> Ordenar por
                         </label>
                         <select id="filtroOrden" class="form-select form-select-sm rounded-pill" onchange="aplicarFiltros()">
                             <option value="nombre_asc">📝 Nombre A-Z</option>
@@ -104,7 +209,7 @@
                     <hr class="my-3">
                     
                     <!-- Botones -->
-                    <button class="btn btn-primary w-100 mb-2 rounded-pill" id="btnAplicarFiltros">
+                    <button class="btn btn-gold w-100 mb-2 rounded-pill" id="btnAplicarFiltros">
                         <i class="fas fa-search me-2"></i>Aplicar Filtros
                     </button>
                     <button class="btn btn-outline-secondary w-100 rounded-pill" id="btnLimpiarFiltros">
@@ -124,12 +229,12 @@
         <!-- Productos - Lado Derecho -->
         <div class="col-12 col-md-9">
             <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                <h5 class="mb-0 fw-bold fs-6 fs-md-5">
-                    <i class="fas fa-gem me-2 text-primary"></i>Nuestros Productos
+                <h5 class="mb-0 fw-bold fs-6 fs-md-5 section-titulo" style="padding-bottom:.55rem;">
+                    <i class="fas fa-gem me-2" style="color: var(--salesiano-gold);"></i>Nuestros Productos
                     <span id="categoriaSeleccionadaLabel" class="badge bg-gold ms-2" style="display:none;"></span>
                 </h5>
                 <div class="d-flex align-items-center gap-2 gap-md-3">
-                    <span class="badge bg-primary rounded-pill px-2 px-md-3 py-2" id="contadorProductos">
+                    <span class="badge rounded-pill px-2 px-md-3 py-2" id="contadorProductos" style="background: linear-gradient(135deg, #1E3A8A, #0F2B5E); color: #fff;">
                         <i class="fas fa-box me-1"></i> 0 productos
                     </span>
                     <button class="btn btn-sm btn-outline-secondary rounded-pill" id="btnVerCarrito" onclick="window.location.href='/carrito'">
@@ -140,7 +245,7 @@
             
             <div class="row g-3 g-md-4" id="productosGrid">
                 <div class="col-12 text-center py-5">
-                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+                    <div class="spinner-border" style="width: 3rem; height: 3rem; color: var(--salesiano-gold);"></div>
                     <p class="mt-3 text-muted">Cargando productos...</p>
                 </div>
             </div>
@@ -211,37 +316,42 @@ function mostrarProductos(productos) {
         
         html += `
             <div class="col-12 col-sm-6 col-md-6 col-lg-4 ${stockColor}">
-                <div class="card h-100 shadow-sm producto-card border-0 rounded-4 overflow-hidden">
-                    ${tieneOferta ? `<div class="position-absolute top-0 start-0 bg-danger text-white px-2 px-md-3 py-1 m-2 m-md-3 rounded-pill" style="z-index:2; font-size:0.65rem;">-${Math.round((1 - precioOferta/p.precio)*100)}%</div>` : ''}
-                    <div class="position-relative overflow-hidden" style="height: 180px; background: #f8f9fa;">
-                        <img src="${p.imagen_url || '/static/img/default-product.png'}" 
-                                class="img-fluid w-100 h-100" style="object-fit: cover; transition: transform 0.3s;"
-                                onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'d-flex align-items-center justify-content-center h-100 text-muted\\' style=\\'font-size:3rem;\\'>📚</div>'"
-                                onmouseover="this.style.transform='scale(1.05)'"
-                                onmouseout="this.style.transform='scale(1)'">
+                <div class="card h-100 shadow-sm producto-card border-0 rounded-4 overflow-hidden animar-carta" style="animation-delay:${(i % 6) * 0.07}s;">
+                    <div class="position-absolute top-0 end-0 z-3 m-2 m-md-3 d-flex flex-column align-items-end gap-1">
+                        ${p.destacado ? '<span class="ribbon-destacado"><i class="fas fa-star me-1"></i>Destacado</span>' : ''}
+                        ${tieneOferta ? `<span class="ribbon-oferta">-${Math.round((1 - precioOferta / p.precio) * 100)}%</span>` : ''}
                     </div>
-                    <div class="card-body p-2 p-md-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="card-title fw-bold mb-0 text-dark" style="font-size: 0.85rem;">${escapeHtml(p.nombre.substring(0, 35))}</h6>
-                            ${p.destacado ? '<i class="fas fa-star text-warning" title="Producto destacado"></i>' : ''}
+                    <div class="position-relative overflow-hidden card-img-wrap" style="height: 200px; background: #f8f9fa;">
+                        <img src="${p.imagen_url || '/static/img/default-product.png'}" 
+                                class="img-fluid w-100 h-100" style="object-fit: cover;"
+                                onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'d-flex align-items-center justify-content-center h-100 text-muted\\' style=\\'font-size:3rem;\\'>📚</div>'">
+                        <div class="card-img-overlay-accion">
+                            ${p.cantidad > 0 ?
+                                `<button class="btn btn-gold btn-sm rounded-pill px-3" onclick="agregarAlCarrito(${p.id}, '${escapeHtml(p.nombre)}', ${precioMostrar}, ${p.cantidad})">
+                                    <i class="fas fa-cart-plus me-1"></i>Agregar
+                                </button>` :
+                                '<span class="badge bg-secondary rounded-pill p-2">Agotado</span>'}
                         </div>
-                        <p class="card-text small text-muted mb-2" style="min-height: 35px;">${p.descripcion ? escapeHtml(p.descripcion.substring(0, 55)) + (p.descripcion.length > 55 ? '...' : '') : 'Sin descripción'}</p>
-                        <div class="mb-2">
-                            ${tieneOferta ? 
+                    </div>
+                    <div class="card-body p-2 p-md-3 d-flex flex-column">
+                        <h6 class="card-title fw-bold mb-1 card-title-libro">${escapeHtml(p.nombre.substring(0, 40))}</h6>
+                        <p class="card-text small text-muted mb-2 card-desc">${p.descripcion ? escapeHtml(p.descripcion.substring(0, 55)) + (p.descripcion.length > 55 ? '...' : '') : 'Sin descripción'}</p>
+                        <div class="mb-2 mt-auto">
+                            ${tieneOferta ?
                                 `<div class="d-flex align-items-baseline gap-2 flex-wrap">
                                     <span class="text-decoration-line-through text-muted small">S/. ${p.precio.toFixed(2)}</span>
-                                    <span class="h6 text-danger fw-bold mb-0">S/. ${precioOferta.toFixed(2)}</span>
-                                </div>` : 
-                                `<span class="h6 text-primary fw-bold mb-0">S/. ${p.precio.toFixed(2)}</span>`
+                                    <span class="precio-oferta">S/. ${precioOferta.toFixed(2)}</span>
+                                </div>` :
+                                `<span class="precio-normal">S/. ${p.precio.toFixed(2)}</span>`
                             }
                         </div>
                         <div class="small text-muted mb-3 d-flex justify-content-between align-items-center flex-wrap gap-1">
                             <span><i class="fas fa-box me-1"></i> ${p.cantidad} uds</span>
                             ${stockBadge}
                         </div>
-                        ${p.cantidad > 0 ? 
-                            `<button class="btn btn-success w-100 rounded-pill py-1 py-md-2" style="font-size:0.75rem;" onclick="agregarAlCarrito(${p.id}, '${escapeHtml(p.nombre)}', ${precioMostrar}, ${p.cantidad})">
-                                <i class="fas fa-cart-plus me-2"></i>Agregar
+                        ${p.cantidad > 0 ?
+                            `<button class="btn btn-gold w-100 rounded-pill py-1 py-md-2 fw-bold boton-agregar" onclick="agregarAlCarrito(${p.id}, '${escapeHtml(p.nombre)}', ${precioMostrar}, ${p.cantidad})">
+                                <i class="fas fa-cart-plus me-2"></i>Agregar al carrito
                             </button>` :
                             `<button class="btn btn-secondary w-100 rounded-pill py-1 py-md-2" style="font-size:0.75rem;" disabled>
                                 <i class="fas fa-times-circle me-2"></i>Agotado
@@ -515,10 +625,18 @@ document.head.appendChild(style);
 <style>
 .producto-card {
     transition: transform 0.3s, box-shadow 0.3s;
+    border: 1px solid rgba(212, 175, 55, 0.15);
 }
 .producto-card:hover {
     transform: translateY(-8px);
-    box-shadow: 0 20px 30px -12px rgba(0,0,0,0.2) !important;
+    box-shadow: 0 22px 35px -14px rgba(15, 43, 94, 0.3) !important;
+    border-color: rgba(212, 175, 55, 0.55);
+}
+.card-img-wrap img {
+    transition: transform 0.45s ease;
+}
+.producto-card:hover .card-img-wrap img {
+    transform: scale(1.08);
 }
 .bg-gradient-primary {
     background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
@@ -529,5 +647,295 @@ document.head.appendChild(style);
 .rounded-4 {
     border-radius: 1rem !important;
 }
+
+/* ===== HERO ===== */
+.hero-catalogo {
+    background: linear-gradient(125deg, #0F2B5E 0%, #1E3A8A 55%, #2547a8 100%);
+    box-shadow: 0 14px 40px -18px rgba(15, 43, 94, 0.55);
+    border-bottom: 3px solid var(--salesiano-gold);
+}
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 12% 20%, rgba(212, 175, 55, 0.22), transparent 42%),
+        radial-gradient(circle at 85% 85%, rgba(37, 99, 235, 0.35), transparent 45%),
+        radial-gradient(circle at 75% 15%, rgba(212, 175, 55, 0.1), transparent 35%);
+    pointer-events: none;
+}
+.hero-kicker {
+    display: inline-block;
+    background: rgba(212, 175, 55, 0.18);
+    border: 1px solid rgba(212, 175, 55, 0.5);
+    color: #F3D97A;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    border-radius: 50px;
+    padding: 0.35rem 1rem;
+    margin-bottom: 0.9rem;
+}
+.hero-title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 800;
+    line-height: 1.15;
+}
+.hero-title-gold {
+    color: var(--salesiano-gold);
+    text-shadow: 0 3px 14px rgba(212, 175, 55, 0.4);
+}
+.hero-text {
+    color: rgba(255, 255, 255, 0.82);
+    max-width: 560px;
+    font-size: 0.95rem;
+    line-height: 1.7;
+}
+@media (max-width: 768px) {
+    .hero-title { font-size: 1.5rem; }
+    .hero-text { font-size: 0.85rem; }
+}
+
+/* ===== FRANJA DE BENEFICIOS ===== */
+.beneficio-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #fff;
+    border: 1px solid rgba(212, 175, 55, 0.25);
+    border-radius: 14px;
+    padding: 0.85rem 1rem;
+    height: 100%;
+    box-shadow: 0 6px 18px -10px rgba(15, 43, 94, 0.18);
+    transition: all 0.25s ease;
+}
+.beneficio-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 26px -12px rgba(15, 43, 94, 0.3);
+}
+.beneficio-card i {
+    font-size: 1.4rem;
+    color: var(--salesiano-gold);
+    filter: drop-shadow(0 2px 6px rgba(212, 175, 55, 0.4));
+}
+.beneficio-card strong { display: block; font-size: 0.82rem; color: var(--salesiano-navy); }
+.beneficio-card small { color: var(--salesiano-suave); font-size: 0.68rem; }
+
+/* ===== HERO: DECORACIÓN Y BÚSQUEDA ===== */
+.hero-patron {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(212, 175, 55, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212, 175, 55, 0.05) 1px, transparent 1px);
+    background-size: 42px 42px;
+    pointer-events: none;
+}
+.hero-float {
+    position: absolute;
+    color: rgba(212, 175, 55, 0.28);
+    animation: flotar 7s ease-in-out infinite;
+    pointer-events: none;
+}
+.hero-float-1 { top: 12%; left: 8%;  font-size: 2.6rem; transform: rotate(-12deg); }
+.hero-float-2 { bottom: 10%; left: 30%; font-size: 2rem;  transform: rotate(10deg); animation-delay: 1.6s; }
+.hero-float-3 { top: 20%; right: 6%; font-size: 1.9rem; transform: rotate(8deg); animation-delay: 3.2s; }
+@keyframes flotar {
+    0%, 100% { transform: translateY(0) rotate(var(--rotate, 0deg)); }
+    50%      { transform: translateY(-14px) rotate(var(--rotate, 0deg)); }
+}
+.hero-float-1 { --rotate: -12deg; } .hero-float-2 { --rotate: 10deg; } .hero-float-3 { --rotate: 8deg; }
+.hero-busqueda .input-group {
+    max-width: 560px;
+    background: #fff;
+    border-radius: 60px;
+    padding: 0.25rem;
+    box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.4);
+}
+.hero-busqueda .input-group-text {
+    background: transparent;
+    border: none;
+    color: var(--salesiano-gold);
+    padding-left: 1rem;
+}
+.hero-busqueda .form-control {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    font-size: 0.9rem;
+}
+.hero-busqueda .btn {
+    background: linear-gradient(135deg, #e9c75a, #D4AF37);
+    border: none;
+    border-radius: 50px;
+    color: #0F2B5E;
+    font-weight: 700;
+    padding: 0.55rem 1.4rem;
+    transition: all 0.25s ease;
+}
+.hero-busqueda .btn:hover { transform: scale(1.04); box-shadow: 0 8px 20px -8px rgba(212, 175, 55, 0.7); }
+.hero-stats {
+    display: grid;
+    gap: 0.75rem;
+}
+.hero-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    border-radius: 14px;
+    padding: 0.8rem 1.1rem;
+    backdrop-filter: blur(6px);
+}
+.hero-stat .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #e9c75a;
+    min-width: 74px;
+}
+.hero-stat .stat-txt { font-size: 0.78rem; color: rgba(255, 255, 255, 0.85); }
+
+/* ===== NAV RÁPIDA DE CATEGORÍAS ===== */
+.categorias-rapidas {
+    scrollbar-width: thin;
+    scrollbar-color: var(--salesiano-gold) #eef0f6;
+}
+.categorias-rapidas::-webkit-scrollbar { height: 6px; }
+.categorias-rapidas::-webkit-scrollbar-thumb { background: #d8c069; border-radius: 10px; }
+.pill-categoria {
+    flex: 0 0 auto;
+    border: 1px solid rgba(15, 43, 94, 0.15);
+    background: #fff;
+    color: #3d4a63;
+    border-radius: 50px;
+    padding: 0.45rem 1.05rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.25s ease;
+}
+.pill-categoria:hover {
+    border-color: var(--salesiano-gold);
+    color: var(--salesiano-navy);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -8px rgba(212, 175, 55, 0.5);
+}
+.pill-categoria.pill-active {
+    background: linear-gradient(135deg, #1E3A8A, #0F2B5E);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 8px 18px -8px rgba(15, 43, 94, 0.6);
+}
+
+/* ===== TARJETAS DE PRODUCTO ===== */
+.animar-carta { animation: aparecerCarta 0.55s ease both; }
+@keyframes aparecerCarta {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.ribbon-destacado {
+    background: linear-gradient(135deg, #e9c75a, #D4AF37);
+    color: #0F2B5E;
+    font-size: 0.62rem;
+    font-weight: 800;
+    padding: 0.3rem 0.7rem;
+    border-radius: 50px;
+    box-shadow: 0 6px 14px -6px rgba(212, 175, 55, 0.6);
+}
+.ribbon-oferta {
+    background: linear-gradient(135deg, #ff5a5a, #d7263d);
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 800;
+    padding: 0.3rem 0.6rem;
+    border-radius: 50px;
+    box-shadow: 0 6px 14px -6px rgba(215, 38, 61, 0.6);
+}
+.card-img-overlay-accion {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(180deg, rgba(15, 43, 94, 0), rgba(15, 43, 94, 0.65));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.card-img-wrap:hover .card-img-overlay-accion { opacity: 1; }
+.card-title-libro {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.88rem;
+    color: var(--salesiano-navy);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.35em;
+    line-height: 1.25;
+}
+.card-desc { min-height: 35px; }
+.precio-normal {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.12rem;
+    font-weight: 800;
+    color: var(--salesiano-navy);
+}
+.precio-oferta {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.12rem;
+    font-weight: 800;
+    color: #d7263d;
+}
+.boton-agregar:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -10px rgba(212, 175, 55, 0.7); }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ===============================
+// BÚSQUEDA DESDE EL HERO
+// ===============================
+function buscarDesdeHero() {
+    var txt = (document.getElementById('busquedaHero') && document.getElementById('busquedaHero').value || '').trim();
+    var filtro = document.getElementById('filtroBuscar');
+    if (filtro && txt) { filtro.value = txt; }
+    if (typeof aplicarFiltros === 'function') { aplicarFiltros(); }
+    var grid = document.getElementById('productosGrid');
+    if (grid) { grid.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+}
+
+// ===============================
+// PESTAÑAS RÁPIDAS DE CATEGORÍA
+// ===============================
+function activarPill(categoriaId) {
+    var objetivo = String(categoriaId || 0);
+    document.querySelectorAll('.pill-categoria').forEach(function(boton) {
+        boton.classList.toggle('pill-active', String(boton.getAttribute('data-id')) === objetivo);
+    });
+}
+
+var _filtrarPorCategoriaOriginal = window.filtrarPorCategoria || function() {};
+function filtrarPorCategoria(categoriaId) {
+    activarPill(categoriaId);
+    _filtrarPorCategoriaOriginal(categoriaId);
+}
+
+var _aplicarFiltrosOriginal = window.aplicarFiltros || function() {};
+function aplicarFiltros() {
+    _aplicarFiltrosOriginal();
+    var select = document.getElementById('filtroCategoria');
+    if (select) { activarPill(select.value); }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var params = new URLSearchParams(window.location.search);
+    var cat = params.get('categoria');
+    if (cat) {
+        activarPill(cat);
+        var select = document.getElementById('filtroCategoria');
+        if (select) { select.value = cat; }
+    }
+});
+</script>
 {% endblock %}

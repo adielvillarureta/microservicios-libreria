@@ -1,7 +1,9 @@
 import glob
 import os
 
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
+import jwt
+import requests
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app, jsonify
 from datetime import datetime, timedelta
 from sqlalchemy import text
 
@@ -18,6 +20,106 @@ cliente_bp = Blueprint('cliente', __name__)
 
 EXTENSIONES_FOTO = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
+FACEBOOK_APP_ID = os.getenv('FACEBOOK_APP_ID', '')
+FACEBOOK_APP_SECRET = os.getenv('FACEBOOK_APP_SECRET', '')
+_GOOGLE_JWKS_URL = 'https://www.googleapis.com/oauth2/v3/certs'
+
+
+def _config_social():
+    return {
+        'google_client_id': GOOGLE_CLIENT_ID,
+        'facebook_app_id': FACEBOOK_APP_ID
+    }
+
+
+def _obtener_o_crear_cliente_social(info):
+    cliente = Cliente.query.filter_by(email=info['email']).first()
+    creado = False
+    if not cliente:
+        cliente = Cliente(
+            nombres=info['nombres'] or 'Cliente',
+            apellidos=info['apellidos'] or '',
+            email=info['email'],
+            clave=os.urandom(24).hex()
+        )
+        db.session.add(cliente)
+        db.session.commit()
+        creado = True
+    return cliente, creado
+
+
+def _iniciar_sesion_social(cliente):
+    limpiar_intentos_exitosos(cliente.email, obtener_ip_cliente())
+    db.session.execute(text("""
+        UPDATE bloqueos
+        SET estado = 0, fecha_desbloqueo = CURRENT_TIMESTAMP
+        WHERE cliente_id = :cliente_id
+        AND tipo_usuario = 'cliente'
+        AND permanente = 0
+        AND estado = 1
+    """), {"cliente_id": cliente.id})
+    db.session.commit()
+
+    session["cliente_id"] = cliente.id
+    session["cliente_nombres"] = cliente.nombres
+    session["cliente_apellidos"] = cliente.apellidos
+    session["cliente_email"] = cliente.email
+    session["cliente_telefono"] = cliente.telefono
+    session["cliente_direccion"] = cliente.direccion
+    session["cliente_dni"] = cliente.dni
+
+
+def _verificar_token_google(credential):
+    if not GOOGLE_CLIENT_ID:
+        return None, 'El inicio de sesión con Google no está configurado'
+    try:
+        jwks = requests.get(_GOOGLE_JWKS_URL, timeout=10).json()
+        payload = jwt.decode(credential, jwks, algorithms=['RS256'], audience=GOOGLE_CLIENT_ID)
+        if payload.get('iss') not in ('accounts.google.com', 'https://accounts.google.com'):
+            return None, 'Emisor de token no válido'
+        email = (payload.get('email') or '').strip().lower()
+        if not email:
+            return None, 'Google no proporcionó tu correo electrónico'
+        nombre = payload.get('given_name') or email.split('@')[0]
+        apellido = payload.get('family_name') or ''
+        return {'email': email, 'nombres': nombre, 'apellidos': apellido}, None
+    except jwt.ExpiredSignatureError:
+        return None, 'La sesión de Google ha expirado, intenta nuevamente'
+    except Exception:
+        return None, 'No se pudo validar tu cuenta de Google'
+
+
+def _verificar_token_facebook(access_token, user_id):
+    if not FACEBOOK_APP_ID:
+        return None, 'El inicio de sesión con Facebook no está configurado'
+    try:
+        if FACEBOOK_APP_SECRET:
+            debug = requests.get('https://graph.facebook.com/debug_token', params={
+                'input_token': access_token,
+                'access_token': f'{FACEBOOK_APP_ID}|{FACEBOOK_APP_SECRET}'
+            }, timeout=10).json()
+            data = debug.get('data', {})
+            if not data.get('is_valid'):
+                return None, 'Token de Facebook no válido'
+            if user_id and str(data.get('user_id')) != str(user_id):
+                return None, 'El token no corresponde al usuario'
+
+        perfil = requests.get('https://graph.facebook.com/me', params={
+            'fields': 'id,name,email',
+            'access_token': access_token
+        }, timeout=10).json()
+        email = (perfil.get('email') or '').strip().lower()
+        if not email:
+            return None, 'Facebook no compartió tu correo electrónico'
+        nombre = (perfil.get('name') or '').strip()
+        partes = nombre.split(' ')
+        nombres = partes[0] if partes else email.split('@')[0]
+        apellidos = ' '.join(partes[1:]) if len(partes) > 1 else ''
+        return {'email': email, 'nombres': nombres, 'apellidos': apellidos}, None
+    except Exception:
+        return None, 'No se pudo validar tu cuenta de Facebook'
+
 
 def _template_data():
     return {
@@ -26,7 +128,8 @@ def _template_data():
         "minutos_restantes": 0,
         "intentos_restantes": None,
         "intentos_totales": None,
-        "intentos_para_permanente": None
+        "intentos_para_permanente": None,
+        **_config_social()
     }
 
 
@@ -229,9 +332,9 @@ def registro_cliente():
         except Exception as e:
             db.session.rollback()
             flash(f"Error: {str(e)}", "danger")
-            return render_template("registro_cliente.html")
+            return render_template("registro_cliente.html", **_config_social())
 
-    return render_template("registro_cliente.html")
+    return render_template("registro_cliente.html", **_config_social())
 
 
 @cliente_bp.route('/logout-cliente')
@@ -428,13 +531,34 @@ def resetear_contrasena(token):
     return render_template("resetear_contrasena.html", token=token)
 
 
-@cliente_bp.route('/auth/google')
+@cliente_bp.route('/api/auth/google', methods=['POST'])
 def auth_google():
-    flash("El inicio de sesión con Google estará disponible muy pronto.", "info")
-    return redirect(url_for('cliente.login_cliente'))
+    data = request.get_json(silent=True) or {}
+    credential = data.get('credential')
+    if not credential:
+        return jsonify({'success': False, 'error': 'Falta el token de Google'}), 400
+
+    info, error = _verificar_token_google(credential)
+    if error:
+        return jsonify({'success': False, 'error': error}), 401
+
+    cliente, creado = _obtener_o_crear_cliente_social(info)
+    _iniciar_sesion_social(cliente)
+    return jsonify({'success': True, 'creado': creado, 'redirect': '/catalogo'})
 
 
-@cliente_bp.route('/auth/facebook')
+@cliente_bp.route('/api/auth/facebook', methods=['POST'])
 def auth_facebook():
-    flash("El inicio de sesión con Facebook estará disponible muy pronto.", "info")
-    return redirect(url_for('cliente.login_cliente'))
+    data = request.get_json(silent=True) or {}
+    access_token = data.get('access_token')
+    user_id = data.get('user_id')
+    if not access_token:
+        return jsonify({'success': False, 'error': 'Falta el token de Facebook'}), 400
+
+    info, error = _verificar_token_facebook(access_token, user_id)
+    if error:
+        return jsonify({'success': False, 'error': error}), 401
+
+    cliente, creado = _obtener_o_crear_cliente_social(info)
+    _iniciar_sesion_social(cliente)
+    return jsonify({'success': True, 'creado': creado, 'redirect': '/catalogo'})

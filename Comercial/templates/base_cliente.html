@@ -7,6 +7,9 @@
     <title>{% block titulito %}Librería Salesiana - Tienda Online{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/theme_cliente.css') }}" rel="stylesheet">
     {% block extra_css %}{% endblock %}
 </head>
@@ -17,7 +20,10 @@
         <div class="container">
             <!-- LOGO -->
             <a class="navbar-brand fw-bold" href="/catalogo">
-                <i class="fas fa-book-open me-1 me-sm-2"></i>Librería Salesiana
+                <span class="brand-top">
+                    <i class="fas fa-book-open me-1 me-sm-2"></i>Librería Salesiana
+                </span>
+                <span class="brand-sub d-none d-md-inline">Don Bosco · Lima</span>
             </a>
 
             <!-- ===== CATEGORÍAS CON JAVASCRIPT ===== -->
@@ -31,8 +37,8 @@
                     <ul class="dropdown-menu shadow-lg" id="menuCategorias">
                         <li>
                             <a class="dropdown-item" href="#" onclick="filtrarPorCategoria(null); return false;">
-                                <i class="fas fa-store text-primary"></i> Todas las categorías
-                                <span class="badge bg-primary float-end">Ver todo</span>
+                                <i class="fas fa-store" style="color: var(--salesiano-gold);"></i> Todas las categorías
+                                <span class="badge float-end" style="background: linear-gradient(135deg, #e9c75a, #D4AF37); color: #0F2B5E;">Ver todo</span>
                             </a>
                         </li>
                         <li><hr class="dropdown-divider"></li>
@@ -293,52 +299,52 @@
     </script>
 
     <!-- ===== FOOTER ===== -->
-    <footer class="bg-dark text-white mt-5 py-4">
+    <footer class="footer-salesiana text-white mt-5 py-4 py-md-5">
         <div class="container">
-            <div class="row">
-                <div class="col-12 col-md-4 mb-4 mb-md-0">
-                    <h5 class="text-center text-md-start"><i class="fas fa-book-open me-2"></i>Librería Salesiana</h5>
-                    <p class="small text-secondary text-center text-md-start">"Formando buenos cristianos y honrados ciudadanos"</p>
-                    <p class="small mb-0 text-center text-md-start">
-                        <i class="fas fa-map-marker-alt me-2 text-danger"></i> Av. Don Bosco 123, Lima - Perú<br>
-                        <i class="fas fa-phone me-2 text-success"></i> (01) 123-4567<br>
-                        <i class="fas fa-envelope me-2 text-info"></i> info@libreriasalesiana.com
+            <div class="row g-4">
+                <div class="col-12 col-md-4">
+                    <h5 class="text-center text-md-start"><i class="fas fa-book-open me-2 icono-dorado"></i>Librería Salesiana</h5>
+                    <p class="small text-center text-md-start" style="color: rgba(255,255,255,0.75);">"Formando buenos cristianos y honrados ciudadanos"</p>
+                    <p class="small mb-0 text-center text-md-start" style="line-height: 1.9;">
+                        <i class="fas fa-map-marker-alt me-2 icono-dorado"></i> Av. Don Bosco 123, Lima - Perú<br>
+                        <i class="fas fa-phone me-2 icono-dorado"></i> (01) 123-4567<br>
+                        <i class="fas fa-envelope me-2 icono-dorado"></i> info@libreriasalesiana.com
                     </p>
                 </div>
-                <div class="col-6 col-md-3 mb-4 mb-md-0">
+                <div class="col-6 col-md-3">
                     <h5 class="text-center text-md-start">Enlaces rápidos</h5>
-                    <ul class="list-unstyled text-center text-md-start">
-                        <li><a href="/catalogo" class="text-secondary text-decoration-none small">🏪 Tienda</a></li>
-                        <li><a href="/acerca-de" class="text-secondary text-decoration-none small">📖 Acerca de</a></li>
-                        <li><a href="/contacto" class="text-secondary text-decoration-none small">📞 Contacto</a></li>
+                    <ul class="list-unstyled text-center text-md-start" style="line-height: 2;">
+                        <li><a href="/catalogo" class="text-decoration-none small"><i class="fas fa-store me-2 icono-dorado"></i>Tienda</a></li>
+                        <li><a href="/acerca-de" class="text-decoration-none small"><i class="fas fa-info-circle me-2 icono-dorado"></i>Acerca de</a></li>
+                        <li><a href="/contacto" class="text-decoration-none small"><i class="fas fa-phone-alt me-2 icono-dorado"></i>Contacto</a></li>
                         {% if not session.cliente_id %}
-                        <li><a href="/login-cliente" class="text-secondary text-decoration-none small">🔐 Iniciar sesión</a></li>
-                        <li><a href="/registro-cliente" class="text-secondary text-decoration-none small">📝 Registrarse</a></li>
+                        <li><a href="/login-cliente" class="text-decoration-none small"><i class="fas fa-sign-in-alt me-2 icono-dorado"></i>Iniciar sesión</a></li>
+                        <li><a href="/registro-cliente" class="text-decoration-none small"><i class="fas fa-user-plus me-2 icono-dorado"></i>Registrarse</a></li>
                         {% else %}
-                        <li><a href="/mis-pedidos" class="text-secondary text-decoration-none small">📦 Mis pedidos</a></li>
-                        <li><a href="/cliente/perfil" class="text-secondary text-decoration-none small">👤 Mi perfil</a></li>
+                        <li><a href="/mis-pedidos" class="text-decoration-none small"><i class="fas fa-box me-2 icono-dorado"></i>Mis pedidos</a></li>
+                        <li><a href="/cliente/perfil" class="text-decoration-none small"><i class="fas fa-user me-2 icono-dorado"></i>Mi perfil</a></li>
                         {% endif %}
                     </ul>
                 </div>
-                <div class="col-6 col-md-3 mb-4 mb-md-0">
+                <div class="col-6 col-md-3">
                     <h5 class="text-center text-md-start">Horario de atención</h5>
-                    <p class="small mb-1 text-center text-md-start">📅 Lunes a Viernes: 9am - 7pm</p>
-                    <p class="small mb-1 text-center text-md-start">📅 Sábados: 9am - 2pm</p>
-                    <p class="small mb-0 text-center text-md-start">🌞 Domingos: Cerrado</p>
+                    <p class="small mb-1 text-center text-md-start"><i class="fas fa-calendar-alt me-2 icono-dorado"></i>Lunes a Viernes: 9am - 7pm</p>
+                    <p class="small mb-1 text-center text-md-start"><i class="fas fa-calendar-check me-2 icono-dorado"></i>Sábados: 9am - 2pm</p>
+                    <p class="small mb-0 text-center text-md-start"><i class="fas fa-sun me-2 icono-dorado"></i>Domingos: Cerrado</p>
                 </div>
                 <div class="col-12 col-md-2">
                     <h5 class="text-center text-md-start">Síguenos</h5>
-                    <div class="d-flex gap-2 justify-content-center justify-content-md-start">
-                        <a href="#" class="btn btn-outline-light btn-sm" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="btn btn-outline-light btn-sm" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="btn btn-outline-light btn-sm" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="btn btn-outline-light btn-sm" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    <div class="d-flex gap-2 justify-content-center justify-content-md-start flex-wrap">
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle" aria-label="Facebook" style="width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle" aria-label="Twitter" style="width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle" aria-label="Instagram" style="width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle" aria-label="WhatsApp" style="width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;"><i class="fab fa-whatsapp"></i></a>
                     </div>
                 </div>
             </div>
-            <hr class="my-3 bg-secondary">
-            <div class="text-center small text-secondary">
-                &copy; 2024 Librería Salesiana Don Bosco - Todos los derechos reservados
+            <hr class="my-3 border-light" style="opacity:.15;">
+            <div class="text-center small" style="color: rgba(255,255,255,0.6);">
+                &copy; 2026 Librería Salesiana Don Bosco - Todos los derechos reservados
             </div>
         </div>
     </footer>

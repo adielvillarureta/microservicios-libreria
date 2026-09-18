@@ -476,6 +476,13 @@
                                         <span class="badge bg-danger">❌ CANCELADO</span>
                                     {% endif %}
                                 </p>
+                                <p><strong>💳 Método de Pago:</strong><br>
+                                    {% if pedido.metodo_pago == 'tarjeta' %}<span class="badge bg-info">💳 Tarjeta</span>
+                                    {% elif pedido.metodo_pago == 'yape' %}<span class="badge bg-warning text-dark">📱 Yape / Plin</span>
+                                    {% elif pedido.metodo_pago == 'transferencia' %}<span class="badge bg-secondary">🏦 Transferencia bancaria</span>
+                                    {% elif pedido.metodo_pago == 'contraentrega' %}<span class="badge bg-success">💵 Contraentrega</span>
+                                    {% else %}<span class="badge bg-secondary">No registrado</span>{% endif %}
+                                </p>
                                 <p><strong>📄 Tipo Comprobante:</strong><br>
                                     {% if venta and venta.tipo_comprobante == 'factura' %}
                                         <span class="badge bg-primary">🏢 FACTURA</span>

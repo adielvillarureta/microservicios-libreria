@@ -119,6 +119,7 @@
                         <th>Cliente</th>
                         <th>Total</th>
                         <th>Tipo Entrega</th>
+                        <th>Método Pago</th>
                         <th>Dirección</th>
                         <th>Estado</th>
                         <th class="text-center">Acciones</th>
@@ -143,6 +144,19 @@
                                 <span class="badge bg-info bg-gradient px-2 px-md-3 py-1 py-md-2">🚚 Delivery</span>
                             {% else %}
                                 <span class="badge bg-secondary bg-gradient px-2 px-md-3 py-1 py-md-2">📍 Recojo</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if pedido.metodo_pago == 'tarjeta' %}
+                                <span class="badge bg-info bg-gradient px-2 px-md-3 py-1 py-md-2">💳 Tarjeta</span>
+                            {% elif pedido.metodo_pago == 'yape' %}
+                                <span class="badge bg-warning text-dark bg-gradient px-2 px-md-3 py-1 py-md-2">📱 Yape/Plin</span>
+                            {% elif pedido.metodo_pago == 'transferencia' %}
+                                <span class="badge bg-secondary bg-gradient px-2 px-md-3 py-1 py-md-2">🏦 Transferencia</span>
+                            {% elif pedido.metodo_pago == 'contraentrega' %}
+                                <span class="badge bg-success bg-gradient px-2 px-md-3 py-1 py-md-2">💵 Contraentrega</span>
+                            {% else %}
+                                <span class="badge bg-light text-muted border px-2 px-md-3 py-1 py-md-2">—</span>
                             {% endif %}
                         </td>
                         <td class="small text-break">

@@ -8,7 +8,7 @@
         <div class="col-12">
             <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
                 <div class="text-center text-sm-start">
-                    <h2 class="mb-1 fs-4 fs-md-3"><i class="fas fa-truck me-2 text-primary"></i>Mis Pedidos</h2>
+                    <h2 class="mb-1 fs-4 fs-md-3 section-title-cli"><i class="fas fa-truck me-2" style="color: var(--salesiano-gold);"></i>Mis Pedidos</h2>
                     <p class="text-muted mb-0 small">Gestiona y da seguimiento a tus compras</p>
                 </div>
                 <a href="/catalogo" class="btn btn-outline-primary btn-sm btn-md-normal">
@@ -22,7 +22,7 @@
     {% if pedidos %}
     <div class="row g-2 g-md-3 mb-4">
         <div class="col-6 col-md-3">
-            <div class="card bg-primary text-white text-center py-2 py-md-3">
+            <div class="card text-white text-center py-2 py-md-3" style="background: linear-gradient(135deg, #1E3A8A, #0F2B5E); border: none;">
                 <h3 class="mb-0 fs-4 fs-md-3">{{ pedidos|length }}</h3>
                 <small class="small">Total Pedidos</small>
             </div>
@@ -183,7 +183,7 @@
 
     <!-- Botón adicional al final -->
     <div class="text-center mt-4">
-        <a href="/catalogo" class="btn btn-primary btn-md px-4 px-md-5 py-2 py-md-3 shadow-sm">
+        <a href="/catalogo" class="btn btn-gold btn-md px-4 px-md-5 py-2 py-md-3 shadow-sm">
             <i class="fas fa-store me-2"></i>Seguir comprando
         </a>
     </div>
@@ -194,7 +194,7 @@
             <i class="fas fa-box-open fa-4x fa-md-5x text-muted mb-3 mb-md-4"></i>
             <h4 class="mb-2 fs-5 fs-md-4">No tienes pedidos aún</h4>
             <p class="text-muted mb-4 small">¡Realiza tu primera compra en nuestra tienda!</p>
-            <a href="/catalogo" class="btn btn-primary btn-md px-4 px-md-5 py-2 py-md-3 shadow-sm">
+            <a href="/catalogo" class="btn btn-gold btn-md px-4 px-md-5 py-2 py-md-3 shadow-sm">
                 <i class="fas fa-store me-2"></i>Ir a la tienda
             </a>
         </div>
@@ -204,7 +204,8 @@
 
 <style>
     .bg-gradient-primary {
-        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        background: linear-gradient(135deg, #0F2B5E 0%, #1E3A8A 100%);
+        border-bottom: 2px solid var(--salesiano-gold);
     }
     
     .hover-card {

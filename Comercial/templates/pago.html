@@ -1,0 +1,701 @@
+{% extends "base_cliente.html" %}
+{% block titulito %}💳 Método de pago - Librería Salesiana{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stepper-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+    }
+    .stepper-wrap .paso {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border-radius: 50px;
+        padding: 0.35rem 0.9rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    .stepper-wrap .paso.hecho { background: #dcfce7; color: #15803d; }
+    .stepper-wrap .paso.actual { background: #1e3a8a; color: #fff; }
+    .stepper-wrap .flecha { color: #9ca3af; }
+    @media (max-width: 480px) {
+        .stepper-wrap .paso { font-size: 0.7rem; padding: 0.3rem 0.6rem; }
+    }
+
+    .payment-method-card {
+        border: 2px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 0.9rem 1rem;
+        margin-bottom: 0.9rem;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        position: relative;
+        background: #fff;
+    }
+    .payment-method-card:hover {
+        border-color: #D4AF37;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(30, 58, 138, 0.08);
+    }
+    .payment-method-card.selected {
+        border-color: #1e3a8a;
+        background: linear-gradient(135deg, #eff6ff, #f8fafc);
+        box-shadow: 0 8px 24px rgba(30, 58, 138, 0.15);
+    }
+    .payment-method-card.selected::after {
+        content: '✔';
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 24px;
+        height: 24px;
+        background: #1e3a8a;
+        color: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        box-shadow: 0 3px 10px rgba(30, 58, 138, 0.4);
+    }
+    .payment-method-card.deshabilitado {
+        opacity: 0.45;
+        pointer-events: none;
+        filter: grayscale(0.8);
+    }
+    .payment-icon {
+        min-width: 64px;
+        display: flex;
+        gap: 0.3rem;
+    }
+    .payment-form {
+        animation: fadeInUp 0.35s ease;
+    }
+    .qr-box {
+        background: #fff;
+        border: 2px dashed #D4AF37;
+        border-radius: 12px;
+        padding: 1rem;
+        display: inline-block;
+    }
+    .cuenta-bancaria {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 0.75rem;
+    }
+    .cuenta-bancaria .fila {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0;
+        font-size: 0.85rem;
+    }
+    .cuenta-bancaria .fila strong { color: #1e3a8a; }
+    .btn-copiar {
+        border: none;
+        background: #1e3a8a;
+        color: #fff;
+        border-radius: 8px;
+        font-size: 0.72rem;
+        padding: 0.2rem 0.6rem;
+        transition: all 0.2s ease;
+    }
+    .btn-copiar:hover { background: #162e6b; }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .resumen-producto {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.3rem 0;
+        font-size: 0.85rem;
+        border-bottom: 1px dashed #e5e7eb;
+    }
+    .resumen-producto:last-child { border-bottom: none; }
+    .total-pagar {
+        border-top: 3px solid #D4AF37;
+        margin-top: 0.6rem;
+        padding-top: 0.8rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .btn-confirmar {
+        background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+        color: #fff;
+        font-weight: 700;
+        border: none;
+        border-radius: 50px;
+        padding: 0.8rem 1.6rem;
+        width: 100%;
+        transition: all 0.25s ease;
+    }
+    .btn-confirmar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(30, 58, 138, 0.35);
+        color: #fff;
+    }
+    .btn-confirmar:disabled { opacity: 0.6; transform: none; box-shadow: none; }
+    .badge-metodo {
+        position: absolute;
+        top: 0.6rem;
+        right: 0.75rem;
+        font-size: 0.7rem;
+    }
+    .info-extra { font-size: 0.72rem; color: #6b7280; }
+</style>
+{% endblock %}
+
+{% block contenido %}
+<div class="container py-3 py-md-4">
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 mb-3 mb-md-4">
+        <h3 class="fs-4 fs-md-3 mb-0"><i class="fas fa-credit-card me-2 text-gold"></i>Método de pago</h3>
+        <div class="stepper-wrap">
+            <span class="paso hecho"><i class="fas fa-check"></i>Carrito</span>
+            <i class="fas fa-arrow-right flecha small"></i>
+            <span class="paso hecho"><i class="fas fa-check"></i>Datos</span>
+            <i class="fas fa-arrow-right flecha small"></i>
+            <span class="paso actual">3. Pago</span>
+        </div>
+    </div>
+
+    <div class="row g-3 g-lg-4">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white py-2 py-md-3 border-bottom">
+                    <h6 class="mb-0 fs-6 fs-md-5"><i class="fas fa-credit-card me-2 text-gold"></i>Selecciona tu método de pago</h6>
+                </div>
+                <div class="card-body p-3 p-md-4">
+
+                    <!-- ===== TARJETA ===== -->
+                    <div class="payment-method-card" data-metodo="tarjeta" onclick="selectPaymentMethod('tarjeta')">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                <div class="payment-icon">
+                                    <i class="fab fa-cc-visa fa-2x" style="color:#1a1f71;"></i>
+                                    <i class="fab fa-cc-mastercard fa-2x" style="color:#eb001b;"></i>
+                                    <i class="fab fa-cc-amex fa-2x" style="color:#2e77bc;"></i>
+                                </div>
+                                <div>
+                                    <strong class="small">Tarjeta de crédito / débito</strong>
+                                    <p class="text-muted small mb-0">Visa, Mastercard, American Express</p>
+                                </div>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="metodoPago" id="tarjetaRadio" value="tarjeta">
+                            </div>
+                        </div>
+                        <div class="payment-form mt-3" id="tarjetaForm" style="display:none;">
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <label class="form-label small fw-bold">Número de tarjeta</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control form-control-sm" id="numeroTarjeta"
+                                               placeholder="1234 5678 9012 3456" maxlength="19"
+                                               oninput="formatearNumeroTarjeta(this)">
+                                        <span class="input-group-text bg-white" id="marcaTarjeta">
+                                            <i class="fab fa-cc-visa fa-lg" style="color:#1a1f71;" data-marca="visa"></i>
+                                        </span>
+                                    </div>
+                                    <small class="d-block mt-1" id="tarjetaError"></small>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-bold">Fecha de expiración</label>
+                                    <input type="text" class="form-control form-control-sm" id="fechaExpiracion"
+                                           placeholder="MM/YY" maxlength="5"
+                                           oninput="formatearFechaExpiracion(this)">
+                                    <small class="d-block mt-1" id="fechaError"></small>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-bold">CVV</label>
+                                    <input type="password" class="form-control form-control-sm" id="cvv"
+                                           placeholder="123" maxlength="4"
+                                           oninput="validarCVV(this)">
+                                    <small class="d-block mt-1" id="cvvError"></small>
+                                </div>
+                            </div>
+                            <div class="alert alert-info mt-2 py-2 mb-0">
+                                <i class="fas fa-lock me-2"></i>
+                                <small>Pago 100% seguro. Tus datos están protegidos y no se almacenan.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== YAPE / PLIN ===== -->
+                    <div class="payment-method-card" data-metodo="yape" onclick="selectPaymentMethod('yape')">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="payment-icon">
+                                    <i class="fas fa-mobile-alt fa-2x" style="color:#6d097f;"></i>
+                                    <i class="fas fa-bolt fa-2x" style="color:#e11d48;"></i>
+                                </div>
+                                <div>
+                                    <strong class="small">Yape / Plin</strong>
+                                    <p class="text-muted small mb-0">Paga al instante desde tu celular</p>
+                                </div>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="metodoPago" id="yapeRadio" value="yape">
+                            </div>
+                        </div>
+                        <div class="payment-form mt-3" id="yapeForm" style="display:none;">
+                            <div class="alert alert-success py-2">
+                                <i class="fas fa-info-circle me-2"></i>Escanea el código QR o yapea al número:
+                                <strong>999 888 777</strong> a nombre de <strong>Librería Salesiana Don Bosco</strong>
+                            </div>
+                            <div class="text-center">
+                                <div class="qr-box">
+                                    <i class="fas fa-qrcode fa-4x" style="color:#1e3a8a;"></i>
+                                </div>
+                                <div class="info-extra mt-2">Después de pagar, confirma tu pedido.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== TRANSFERENCIA ===== -->
+                    <div class="payment-method-card" data-metodo="transferencia" onclick="selectPaymentMethod('transferencia')">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="payment-icon"><i class="fas fa-university fa-2x" style="color:#005ca4;"></i></div>
+                                <div>
+                                    <strong class="small">Transferencia bancaria</strong>
+                                    <p class="text-muted small mb-0">BCP, BBVA, Interbank</p>
+                                </div>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="metodoPago" id="transferenciaRadio" value="transferencia">
+                            </div>
+                        </div>
+                        <div class="payment-form mt-3" id="transferenciaForm" style="display:none;">
+                            <div class="alert alert-warning py-2 small mb-2"><i class="fas fa-exclamation-triangle me-1"></i><strong>Datos para la transferencia:</strong></div>
+                            <div class="cuenta-bancaria">
+                                <div class="fila"><span>Banco</span><strong>BCP</strong></div>
+                                <div class="fila">
+                                    <span>Titular</span><strong>Librería Salesiana Don Bosco</strong>
+                                </div>
+                                <div class="fila">
+                                    <span>Cuenta soles</span>
+                                    <span><code>123-4567890-123</code> <button type="button" class="btn-copiar" onclick="copiarTexto('123-4567890-123', this)"><i class="fas fa-copy me-1"></i>Copiar</button></span>
+                                </div>
+                                <div class="fila">
+                                    <span>CCI</span>
+                                    <span><code>123-456-789012345678-90</code> <button type="button" class="btn-copiar" onclick="copiarTexto('123-456-789012345678-90', this)"><i class="fas fa-copy me-1"></i>Copiar</button></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== CONTRAENTREGA ===== -->
+                    <div class="payment-method-card" id="contraentregaCard" data-metodo="contraentrega" onclick="selectPaymentMethod('contraentrega')">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="payment-icon"><i class="fas fa-hand-holding-usd fa-2x" style="color:#d97706;"></i></div>
+                                <div>
+                                    <strong class="small">Pago contraentrega</strong>
+                                    <p class="text-muted small mb-0">Pagas cuando recibes tu pedido</p>
+                                </div>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="metodoPago" id="contraentregaRadio" value="contraentrega">
+                            </div>
+                        </div>
+                        <div class="payment-form mt-3" id="contraentregaForm" style="display:none;">
+                            <div class="alert alert-success py-2 mb-0">
+                                <i class="fas fa-check-circle me-2"></i>Pagas en efectivo al recibir.
+                                <strong>Cargo adicional: S/. 3.00</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between gap-2 mt-3">
+                        <a href="/checkout" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-2"></i>Volver a datos
+                        </a>
+                        <button class="btn btn-confirmar" onclick="confirmarPedido()" id="btnConfirmar">
+                            <i class="fas fa-check-circle me-2"></i>Confirmar y pagar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top:20px">
+                <div class="card-header" style="background:linear-gradient(135deg,#1e3a8a,#1d4ed8); color:#fff;">
+                    <h6 class="mb-0 fs-6"><i class="fas fa-shopping-cart me-2"></i>Resumen del pedido</h6>
+                </div>
+                <div class="card-body p-3 p-md-4">
+                    <div id="resumenProductos"></div>
+                    <hr class="my-2 my-md-3">
+                    <div class="d-flex justify-content-between mb-1 small">
+                        <span>Subtotal</span><span id="subtotalTexto">S/. 0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1 small" id="descuentoResumen" style="display:none;">
+                        <span class="text-success">Descuento</span><span class="text-success" id="descuentoTexto">-S/. 0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1 small" id="envioRow" style="display:none;">
+                        <span><i class="fas fa-truck me-1"></i>Envío</span><span id="envioTexto">S/. 0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1 small" id="contraentregaCosto" style="display:none;">
+                        <span><i class="fas fa-hand-holding-usd me-1"></i>Cargo contraentrega</span><span>S/. 3.00</span>
+                    </div>
+                    <div class="total-pagar">
+                        <span class="fw-bold small">Total a pagar</span>
+                        <span class="fw-bold fs-5" style="color:#1e3a8a;" id="totalFinal">S/. 0.00</span>
+                    </div>
+                    <div class="alert alert-light border mt-3 mb-0 small py-2" id="resumenCliente"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+// ===============================
+// VARIABLES GLOBALES
+// ===============================
+var carrito = [];
+var checkoutData = null;
+var metodoSeleccionado = null;
+var tipoEntrega = 'recojo';
+var subtotal = 0;
+var descuento = 0;
+var costoEnvio = 0;
+var cargoContraentrega = 0;
+
+// ===============================
+// INICIALIZACIÓN
+// ===============================
+document.addEventListener('DOMContentLoaded', function() {
+    var carritoData = localStorage.getItem('carritoCliente');
+    if (!carritoData || JSON.parse(carritoData).length === 0) {
+        Swal.fire({ icon: 'warning', title: 'Tu carrito está vacío', confirmButtonText: 'Ir a la tienda' })
+            .then(function() { window.location.href = '/catalogo'; });
+        return;
+    }
+
+    var chk = localStorage.getItem('checkoutData');
+    if (chk) {
+        checkoutData = JSON.parse(chk);
+    } else {
+        Swal.fire({ icon: 'info', title: 'Completa tus datos primero', confirmButtonText: 'Ir a checkout' })
+            .then(function() { window.location.href = '/checkout'; });
+        return;
+    }
+
+    carrito = JSON.parse(carritoData);
+    tipoEntrega = localStorage.getItem('tipoEntrega') || 'recojo';
+    cargarDatos();
+
+    if (tipoEntrega !== 'delivery') {
+        var card = document.getElementById('contraentregaCard');
+        card.classList.add('deshabilitado');
+    }
+});
+
+// ===============================
+// CARGAR DATOS
+// ===============================
+function cargarDatos() {
+    var html = '';
+    var html2 = '';
+    var itemsHtml = '';
+    subtotal = 0;
+
+    carrito.forEach(function(i) {
+        subtotal += i.precio * i.cantidad;
+        itemsHtml += '<div class="resumen-producto"><span>' + escapar(i.nombre) + ' x' + i.cantidad + '</span><span>S/. ' + (i.precio * i.cantidad).toFixed(2) + '</span></div>';
+    });
+
+    if (tipoEntrega === 'delivery') {
+        costoEnvio = 5;
+        document.getElementById('envioRow').style.display = 'flex';
+        document.getElementById('envioTexto').textContent = 'S/. 5.00';
+    } else {
+        costoEnvio = 0;
+        document.getElementById('envioRow').style.display = 'none';
+    }
+
+    descuento = parseFloat(localStorage.getItem('descuento') || '0') || 0;
+    document.getElementById('subtotalTexto').textContent = 'S/. ' + subtotal.toFixed(2);
+    if (descuento > 0) {
+        document.getElementById('descuentoResumen').style.display = 'flex';
+        document.getElementById('descuentoTexto').textContent = '-S/. ' + descuento.toFixed(2);
+    }
+    document.getElementById('resumenProductos').innerHTML = itemsHtml;
+
+    var cliente = checkoutData.cliente || {};
+    html2 = '<i class="fas fa-user me-1 text-gold"></i> ' + escapar(cliente.nombres || '').trim() + ' ' + escapar(cliente.apellidos || '').trim();
+    if (cliente.email) html2 += '<br><i class="fas fa-envelope me-1 text-gold"></i> ' + escapar(cliente.email);
+    html2 += '<br><i class="fas fa-file-invoice me-1 text-gold"></i> ' + (checkoutData.tipo_comprobante === 'factura' ? 'Factura' : 'Boleta') + ' · ' + escapar(checkoutData.documento || '-');
+    html2 += '<br><i class="fas fa-truck me-1 text-gold"></i> ' + (tipoEntrega === 'delivery' ? 'Delivery a: ' + escapar(checkoutData.direccion || '-') : 'Recojo en tienda');
+    document.getElementById('resumenCliente').innerHTML = html2;
+
+    actualizarTotal();
+}
+
+// ===============================
+// TOTAL
+// ===============================
+function actualizarTotal() {
+    var total = subtotal - descuento + costoEnvio + cargoContraentrega;
+    document.getElementById('totalFinal').textContent = 'S/. ' + total.toFixed(2);
+}
+
+// ===============================
+// SELECCIONAR MÉTODO
+// ===============================
+function selectPaymentMethod(metodo) {
+    metodoSeleccionado = metodo;
+    document.querySelectorAll('.payment-method-card').forEach(function(c) {
+        c.classList.remove('selected');
+    });
+    document.querySelector('.payment-method-card[data-metodo="' + metodo + '"]').classList.add('selected');
+    var radio = document.getElementById(metodo + 'Radio');
+    if (radio) radio.checked = true;
+    document.querySelectorAll('.payment-form').forEach(function(f) { f.style.display = 'none'; });
+    var form = document.getElementById(metodo + 'Form');
+    if (form) form.style.display = 'block';
+
+    var cCosto = document.getElementById('contraentregaCosto');
+    if (metodo === 'contraentrega' && tipoEntrega === 'delivery') {
+        cargoContraentrega = 3;
+        cCosto.style.display = 'flex';
+    } else {
+        cargoContraentrega = 0;
+        cCosto.style.display = 'none';
+    }
+    actualizarTotal();
+}
+
+// ===============================
+// VALIDACIÓN DE TARJETA
+// ===============================
+var marcasTarjeta = {
+    visa: '<i class="fab fa-cc-visa fa-lg" style="color:#1a1f71;"></i>',
+    mastercard: '<i class="fab fa-cc-mastercard fa-lg" style="color:#eb001b;"></i>',
+    amex: '<i class="fab fa-cc-amex fa-lg" style="color:#2e77bc;"></i>'
+};
+
+function detectarMarca(numeros) {
+    if (/^4/.test(numeros)) return 'visa';
+    if (/^(5[1-5]|2[2-7])/.test(numeros)) return 'mastercard';
+    if (/^3[47]/.test(numeros)) return 'amex';
+    return null;
+}
+
+function formatearNumeroTarjeta(input) {
+    var valor = input.value.replace(/\D/g, '').slice(0, 16);
+    input.value = valor.replace(/(.{4})/g, '$1 ').trim();
+    var marcaEl = document.getElementById('marcaTarjeta');
+    var marca = detectarMarca(valor);
+    if (marca) marcaEl.innerHTML = marcasTarjeta[marca];
+    else marcaEl.innerHTML = '<i class="far fa-credit-card fa-lg text-muted"></i>';
+    validarTarjeta();
+}
+
+function luhnValido(numero) {
+    var suma = 0;
+    var doble = false;
+    for (var i = numero.length - 1; i >= 0; i--) {
+        var d = parseInt(numero.charAt(i));
+        if (doble) {
+            d *= 2;
+            if (d > 9) d -= 9;
+        }
+        suma += d;
+        doble = !doble;
+    }
+    return suma % 10 === 0;
+}
+
+function validarTarjeta() {
+    var err = document.getElementById('tarjetaError');
+    var numero = document.getElementById('numeroTarjeta').value.replace(/\s/g, '');
+    if (methNo() !== 'tarjeta' || numero.length === 0) { err.innerHTML = ''; return false; }
+    if (numero.length < 16) {
+        err.innerHTML = '<span class="text-warning small">Faltan ' + (16 - numero.length) + ' dígitos</span>';
+        return false;
+    }
+    if (!luhnValido(numero)) {
+        err.innerHTML = '<span class="text-danger small"><i class="fas fa-times me-1"></i>Número inválido (Luhn)</span>';
+        return false;
+    }
+    err.innerHTML = '<span class="text-success small"><i class="fas fa-check me-1"></i>Número válido</span>';
+    return true;
+}
+
+function methNo() { return metodoSeleccionado; }
+
+function formatearFechaExpiracion(input) {
+    var valor = input.value.replace(/\D/g, '').slice(0, 4);
+    if (valor.length >= 2) {
+        var mes = valor.slice(0, 2);
+        if (parseInt(mes) > 12) mes = '12';
+        if (mes.length === 2 && parseInt(mes) < 1) mes = '01';
+        input.value = mes + (valor.length > 2 ? '/' + valor.slice(2) : '');
+    } else {
+        input.value = valor;
+    }
+}
+
+function validarFecha() {
+    var err = document.getElementById('fechaError');
+    var val = document.getElementById('fechaExpiracion').value;
+    if (!val || methodNo() !== 'tarjeta') { err.innerHTML = ''; return true; }
+    var partes = val.split('/');
+    if (partes.length !== 2) { err.innerHTML = '<span class="text-danger small">Formato MM/YY</span>'; return false; }
+    var mes = parseInt(partes[0]);
+    var anio = 2000 + parseInt(partes[1]);
+    var ahora = new Date();
+    if (mes < 1 || mes > 12) { err.innerHTML = '<span class="text-danger small">Mes inválido</span>'; return false; }
+    if (new Date(anio, mes - 1) < new Date(ahora.getFullYear(), ahora.getMonth())) {
+        err.innerHTML = '<span class="text-danger small">Tarjeta expirada</span>';
+        return false;
+    }
+    err.innerHTML = '<span class="text-success small"><i class="fas fa-check me-1"></i>Fecha válida</span>';
+    return true;
+}
+
+function methodNo() { return metodoSeleccionado; }
+
+function validarCVV(input) {
+    var valor = input.value.replace(/\D/g, '').slice(0, 4);
+    input.value = valor;
+    var err = document.getElementById('cvvError');
+    if (!valor || methodNo() !== 'tarjeta') { err.innerHTML = ''; return true; }
+    if (valor.length >= 3) {
+        err.innerHTML = '<span class="text-success small"><i class="fas fa-check me-1"></i>CVV válido</span>';
+        return true;
+    }
+    err.innerHTML = '<span class="text-danger small">Faltan ' + (3 - valor.length) + ' dígitos</span>';
+    return false;
+}
+
+// ===============================
+// COPIAR DATOS BANCARIOS
+// ===============================
+function copiarTexto(texto, btn) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(texto).then(function() {
+            btn.innerHTML = '<i class="fas fa-check me-1"></i>Copiado';
+            setTimeout(function() { btn.innerHTML = '<i class="fas fa-copy me-1"></i>Copiar'; }, 1500);
+        });
+    } else {
+        btn.innerHTML = '<i class="fas fa-check me-1"></i>Copiado';
+        setTimeout(function() { btn.innerHTML = '<i class="fas fa-copy me-1"></i>Copiar'; }, 1500);
+    }
+}
+
+// ===============================
+// CONFIRMAR PEDIDO
+// ===============================
+function confirmarPedido() {
+    if (!metodoSeleccionado) {
+        Swal.fire({ icon: 'warning', title: 'Selecciona un método de pago', confirmButtonColor: '#1e3a8a' });
+        return;
+    }
+
+    if (metodoSeleccionado === 'tarjeta') {
+        if (!validarTarjeta() || !validarFecha() || !validarCVV(document.getElementById('cvv'))) {
+            Swal.fire({ icon: 'warning', title: 'Datos de tarjeta inválidos', confirmButtonColor: '#1e3a8a' });
+            return;
+        }
+    }
+
+    if (metodoSeleccionado === 'contraentrega' && tipoEntrega !== 'delivery') {
+        Swal.fire({ icon: 'warning', title: 'No disponible', text: 'El pago contraentrega solo aplica para delivery.' });
+        return;
+    }
+
+    if (!checkoutData || !checkoutData.email) {
+        Swal.fire({ icon: 'error', title: 'Faltan datos', text: 'Regresa al checkout para completar tus datos.' })
+            .then(function() { window.location.href = '/checkout'; });
+        return;
+    }
+
+    var cliente = checkoutData.cliente || {};
+    var items = carrito.map(function(i) {
+        return { id: parseInt(i.id), nombre: i.nombre, precio: parseFloat(i.precio), cantidad: parseInt(i.cantidad) };
+    });
+
+    var pedidoData = {
+        items: items,
+        total: parseFloat(document.getElementById('totalFinal').textContent.replace('S/. ', '').trim()) || 0,
+        tipo_entrega: tipoEntrega,
+        metodo_pago: metodoSeleccionado,
+        comprobante: { tipo: checkoutData.tipo_comprobante || 'boleta' },
+        cliente: {
+            nombres: checkoutData.nombres || cliente.nombres || '',
+            apellidos: checkoutData.apellidos || cliente.apellidos || '',
+            email: checkoutData.email || '',
+            telefono: checkoutData.telefono || cliente.telefono || '999999999',
+            documento: checkoutData.documento || '',
+            razon_social: checkoutData.razon_social || cliente.razon_social || '',
+            direccion: checkoutData.direccion || cliente.direccion || ''
+        }
+    };
+
+    var btn = document.getElementById('btnConfirmar');
+    var original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+
+    fetch('/api/pedidos/crear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pedidoData)
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+        if (data.success) {
+            localStorage.removeItem('carritoCliente');
+            localStorage.removeItem('checkoutData');
+            localStorage.removeItem('cuponAplicado');
+            localStorage.removeItem('descuento');
+            localStorage.removeItem('tipoEntrega');
+            localStorage.removeItem('direccionEntrega');
+
+            Swal.fire({
+                icon: 'success',
+                title: '¡Pedido realizado!',
+                html: '✅ Pedido #' + data.pedido_id + '<br>Total: S/. ' + (data.total !== undefined ? Number(data.total).toFixed(2) : '0.00'),
+                confirmButtonText: 'Ver mis pedidos',
+                confirmButtonColor: '#1e3a8a'
+            }).then(function() {
+                window.location.href = '/mis-pedidos';
+            });
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = original;
+            Swal.fire({ icon: 'error', title: 'Error', text: data.error || 'No se pudo procesar el pedido.' });
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.innerHTML = original;
+        Swal.fire({ icon: 'error', title: 'Error de conexión', text: 'No se pudo conectar con el servidor.' });
+    });
+}
+
+function escapar(t) {
+    if (!t) return '';
+    return t.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
+</script>
+{% endblock %}

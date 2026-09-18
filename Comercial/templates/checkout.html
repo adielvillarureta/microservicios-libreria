@@ -2,6 +2,7 @@
 {% block titulito %}📋 Checkout - Librería Salesiana{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
     .checkout-card {
         border-radius: 16px;
@@ -256,6 +257,109 @@
         background-color: #D4AF37 !important;
     }
 
+    /* ===== MAPAS ===== */
+    .mapa-frame {
+        height: 260px;
+        border-radius: 12px;
+        border: 2px solid #e5e7eb;
+        z-index: 0;
+    }
+    .mapa-frame.entregas {
+        height: 220px;
+    }
+    .map-search-box {
+        position: relative;
+        margin-bottom: 0.6rem;
+    }
+    .map-search-box .form-control {
+        border-radius: 10px;
+        border: 2px solid #e5e7eb;
+        padding-right: 2.5rem;
+    }
+    .map-search-box .form-control:focus {
+        border-color: #D4AF37;
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+    }
+    .btn-mapa-buscar {
+        position: absolute;
+        right: 4px;
+        top: 4px;
+        border: none;
+        background: linear-gradient(135deg, #D4AF37, #c8a82e);
+        color: #1e3a8a;
+        border-radius: 8px;
+        padding: 0.35rem 0.8rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .btn-mapa-buscar:hover {
+        box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+    }
+    .map-sugerencias {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        max-height: 160px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+    }
+    .map-sugerencias.show {
+        display: block;
+    }
+    .map-sugerencia-item {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.82rem;
+        color: #1f2937;
+        cursor: pointer;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .map-sugerencia-item:hover {
+        background: #fffbeb;
+    }
+    .map-sugerencia-item:last-child {
+        border-bottom: none;
+    }
+    .map-sin-resultado {
+        padding: 0.6rem 0.75rem;
+        font-size: 0.82rem;
+        color: #dc2626;
+    }
+    .tienda-card {
+        background: linear-gradient(135deg, #fffbeb, #fff7e6);
+        border: 2px solid #D4AF37;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+    }
+    .tienda-card .tienda-nombre {
+        font-weight: 700;
+        color: #1e3a8a;
+    }
+    .tienda-card .tienda-dato {
+        font-size: 0.82rem;
+        color: #4b5563;
+    }
+    .btn-como-llegar {
+        background: #1e3a8a;
+        color: #fff;
+        border: none;
+        border-radius: 50px;
+        padding: 0.45rem 1.2rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .btn-como-llegar:hover {
+        background: #162e6b;
+        color: #fff;
+        transform: translateY(-1px);
+    }
+
     @media (max-width: 768px) {
         .radio-card {
             padding: 0.5rem 0.75rem;
@@ -284,21 +388,24 @@
                         <i class="fas fa-user-circle me-2 text-gold"></i>Datos de facturación
                     </h5>
 
-                    <!-- ===== NOMBRES Y APELLIDOS ===== -->
+                    <!-- ===== NOMBRES Y APELLIDOS (SIN EDITAR - VENEN DEL DNI/RUC) ===== -->
                     <div class="row g-3">
                         <div class="col-6">
                             <label class="field-label">Nombres <span class="text-danger">*</span></label>
-                            <input type="text" id="clienteNombres" class="field-value editable w-100" 
+                            <input type="text" id="clienteNombres" class="field-value readonly w-100" readonly
                                    value="{{ cliente.nombres if cliente else '' }}"
-                                   placeholder="Tus nombres">
+                                   placeholder="Se llenan al verificar tu DNI">
                         </div>
                         <div class="col-6">
                             <label class="field-label">Apellidos <span class="text-danger">*</span></label>
-                            <input type="text" id="clienteApellidos" class="field-value editable w-100" 
+                            <input type="text" id="clienteApellidos" class="field-value readonly w-100" readonly
                                    value="{{ cliente.apellidos if cliente else '' }}"
-                                   placeholder="Tus apellidos">
+                                   placeholder="Se llenan al verificar tu DNI">
                         </div>
                     </div>
+                    <small class="text-muted d-block mt-1">
+                        <i class="fas fa-lock me-1"></i>El nombre se toma de RENIEC/SUNAT según tu documento y no se puede editar.
+                    </small>
 
                     <!-- ===== EMAIL Y TELÉFONO ===== -->
                     <div class="row g-3 mt-2">
@@ -381,13 +488,77 @@
                                 <div class="confirm-data" id="confirmDocumento">-</div>
                             </div>
                         </div>
+                        <div class="text-center mt-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnManualOverride" style="display:none;" onclick="usarManualOverride()">
+                                <i class="fas fa-pen me-1"></i>Continuar sin verificación
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- ===== DIRECCIÓN ===== -->
+                    <!-- ===== MÉTODO DE ENTREGA ===== -->
                     <div class="mb-0 mt-3">
-                        <label class="field-label">Dirección de entrega</label>
-                        <textarea id="direccionEntrega" class="form-control" rows="2" 
-                                  placeholder="Calle, número, urbanización, referencia...">{{ cliente.direccion if cliente else '' }}</textarea>
+                        <label class="field-label">Método de entrega <span class="text-danger">*</span></label>
+                        <div class="row g-2 mt-1">
+                            <div class="col-6">
+                                <div class="radio-card active" id="cardRecojo" onclick="seleccionarEntrega('recojo')">
+                                    <input type="radio" name="tipoEntrega" value="recojo" checked>
+                                    <div>
+                                        <div class="radio-label">🏪 Recojo en tienda</div>
+                                        <div class="radio-sub">Gratis</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="radio-card" id="cardDelivery" onclick="seleccionarEntrega('delivery')">
+                                    <input type="radio" name="tipoEntrega" value="delivery">
+                                    <div>
+                                        <div class="radio-label">🚚 Delivery</div>
+                                        <div class="radio-sub">S/. 5.00</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== PANEL RECOJO EN TIENDA ===== -->
+                    <div id="panelRecojo" class="mt-3">
+                        <div class="tienda-card">
+                            <div class="tienda-nombre"><i class="fas fa-store me-2 text-gold"></i>Librería Salesiana - María Auxiliadora</div>
+                            <div class="tienda-dato">
+                                <i class="fas fa-map-marker-alt me-2 text-danger"></i>Av. Don Bosco 123, Centro Comercial Salesiano, Lima - Perú
+                            </div>
+                            <div class="tienda-dato">
+                                <i class="fas fa-clock me-2 text-gold"></i>Lun a Sáb: 9:00 am - 8:00 pm · Dom: 9:00 am - 1:00 pm
+                            </div>
+                            <a class="btn btn-como-llegar mt-2" target="_blank"
+                               href="https://www.google.com/maps/dir/?api=1&destination=Av.+Don+Bosco+123,+Lima,+Peru">
+                                <i class="fas fa-directions me-1"></i>Cómo llegar
+                            </a>
+                        </div>
+                        <div id="mapaTienda" class="mapa-frame mt-2"></div>
+                        <small class="text-muted d-block mt-1">📌 Puedes recoger tu pedido en tienda con tu código de comprobante.</small>
+                    </div>
+
+                    <!-- ===== PANEL DELIVERY ===== -->
+                    <div id="panelDelivery" class="mt-3" style="display:none;">
+                        <label class="field-label">Buscar tu vivienda en el mapa</label>
+                        <div class="map-search-box">
+                            <input type="text" id="buscarVivienda" class="form-control"
+                                   placeholder="Ej. Av. Los Alamos 123, San Borja"
+                                   onkeydown="if(event.key==='Enter'){event.preventDefault();buscarVivienda();}">
+                            <button type="button" class="btn-mapa-buscar" onclick="buscarVivienda()">
+                                <i class="fas fa-search me-1"></i>Buscar
+                            </button>
+                            <div id="resultadosBusqueda" class="map-sugerencias"></div>
+                        </div>
+                        <div id="mapaDomicilio" class="mapa-frame entregas"></div>
+
+                        <label class="field-label mt-3">Dirección de entrega</label>
+                        <textarea id="direccionEntrega" class="form-control" rows="2"
+                                  placeholder="Calle, número, urbanización, referencia..."
+                                  oninput="direccionEditada()">{{ cliente.direccion if cliente else '' }}</textarea>
+                        <small class="text-muted d-block mt-1">🖐️ Arrastra el punto rojo en el mapa para ajustar tu ubicación, o haz clic en cualquier parte del mapa.</small>
+                        <small class="text-muted d-block mt-1">⭐ Tiempo de entrega: 3-5 días hábiles.</small>
                     </div>
                 </div>
             </div>
@@ -444,6 +615,7 @@
 <!-- SWEETALERT2 CDN -->
 <!-- ============================================ -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 // ============================================
@@ -451,6 +623,12 @@
 // ============================================
 var carrito = [];
 var tipoComprobante = 'boleta';
+var manualVerificado = false;
+var tipoEntrega = localStorage.getItem('tipoEntrega') || 'recojo';
+var mapaTienda = null;
+var mapaDomicilio = null;
+var marcadorDomicilio = null;
+var direccionMarcada = false;
 
 // ============================================
 // SELECCIONAR TIPO DE COMPROBANTE
@@ -503,9 +681,208 @@ function seleccionarComprobante(tipo) {
 }
 
 // ============================================
+// SELECCIONAR TIPO DE ENTREGA
+// ============================================
+function seleccionarEntrega(tipo) {
+    tipoEntrega = tipo;
+
+    document.getElementById('cardRecojo').classList.toggle('active', tipo === 'recojo');
+    document.getElementById('cardDelivery').classList.toggle('active', tipo === 'delivery');
+
+    document.querySelectorAll('input[name="tipoEntrega"]').forEach(function(el) {
+        el.checked = el.value === tipo;
+    });
+
+    document.getElementById('panelRecojo').style.display = tipo === 'recojo' ? 'block' : 'none';
+    document.getElementById('panelDelivery').style.display = tipo === 'delivery' ? 'block' : 'none';
+
+    actualizarEnvios();
+
+    if (tipo === 'recojo') {
+        initMapaTienda();
+        setTimeout(function() { if (mapaTienda) mapaTienda.invalidateSize(); }, 200);
+    }
+    if (tipo === 'delivery') {
+        initMapaDomicilio();
+        setTimeout(function() { if (mapaDomicilio) mapaDomicilio.invalidateSize(); }, 200);
+    }
+}
+
+// ============================================
+// ACTUALIZAR IMPORTE DE ENVÍO
+// ============================================
+function actualizarEnvios() {
+    var envio = document.getElementById('envio');
+    var total = document.getElementById('total');
+    var subtotal = document.getElementById('subtotal');
+    var descuento = document.getElementById('descuento');
+
+    var sub = parseFloat((subtotal.textContent || '0').replace('S/. ', '').replace(',', '')) || 0;
+    var desc = parseFloat((descuento.textContent || '0').replace('-S/. ', '').replace('S/. ', '').replace(',', '')) || 0;
+    var costoEnvio = tipoEntrega === 'delivery' ? 5 : 0;
+
+    envio.textContent = 'S/. ' + costoEnvio.toFixed(2);
+    total.textContent = 'S/. ' + (sub - desc + costoEnvio).toFixed(2);
+}
+
+// ============================================
+// BUSCAR VIVIENDA EN EL MAPA (Nominatim/OSM)
+// ============================================
+function buscarVivienda() {
+    var query = document.getElementById('buscarVivienda').value.trim();
+    var contenedor = document.getElementById('resultadosBusqueda');
+    if (!query) return;
+
+    contenedor.innerHTML = '<div class="map-sin-resultado">Buscando...</div>';
+    contenedor.classList.add('show');
+
+    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=pe&q=' + encodeURIComponent(query))
+        .then(function(resp) { return resp.json(); })
+        .then(function(resultados) {
+            if (!resultados || resultados.length === 0) {
+                contenedor.innerHTML = '<div class="map-sin-resultado">No se encontraron resultados. Revisa la dirección.</div>';
+                return;
+            }
+            var html = '';
+            resultados.forEach(function(r) {
+                var nombre = (r.display_name || '').replace(/'/g, "\\'");
+                html += '<div class="map-sugerencia-item" onclick="seleccionarLugar(' + parseFloat(r.lat) + ', ' + parseFloat(r.lon) + ', \'' + nombre + '\')">'
+                        + '<i class="fas fa-map-pin me-1 text-danger"></i>' + r.display_name + '</div>';
+            });
+            contenedor.innerHTML = html;
+        })
+        .catch(function() {
+            contenedor.innerHTML = '<div class="map-sin-resultado">Error al buscar. Intenta nuevamente.</div>';
+        });
+}
+
+// ============================================
+// SELECCIONAR LUGAR DEL RESULTADO
+// ============================================
+function seleccionarLugar(lat, lon, nombre) {
+    document.getElementById('resultadosBusqueda').classList.remove('show');
+
+    colocarMarcadorDomicilio(lat, lon);
+    document.getElementById('direccionEntrega').value = nombre;
+    direccionMarcada = true;
+    actualizarEnvios();
+}
+
+// ============================================
+// DIRECCIÓN EDITADA A MANO
+// ============================================
+function direccionEditada() {
+    direccionMarcada = false;
+}
+
+// ============================================
+// INICIALIZAR MAPA DE LA TIENDA
+// ============================================
+function initMapaTienda() {
+    var el = document.getElementById('mapaTienda');
+    if (!el || mapaTienda) return;
+
+    mapaTienda = L.map('mapaTienda').setView([-12.046374, -77.042793], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(mapaTienda);
+    L.marker([-12.046374, -77.042793]).addTo(mapaTienda)
+        .bindPopup('<strong>Librería Salesiana - María Auxiliadora</strong><br>Av. Don Bosco 123, Lima - Perú')
+        .openPopup();
+
+    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=pe&q=' + encodeURIComponent('Av. Don Bosco 123, Lima, Peru'))
+        .then(function(resp) { return resp.json(); })
+        .then(function(resultados) {
+            if (resultados && resultados.length > 0) {
+                var r = resultados[0];
+                mapaTienda.setView([parseFloat(r.lat), parseFloat(r.lon)], 16);
+            }
+        })
+        .catch(function() {});
+}
+
+// ============================================
+// INICIALIZAR MAPA DE DOMICILIO
+// ============================================
+function initMapaDomicilio() {
+    var el = document.getElementById('mapaDomicilio');
+    if (!el || mapaDomicilio) return;
+
+    mapaDomicilio = L.map('mapaDomicilio').setView([-12.046374, -77.042793], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(mapaDomicilio);
+
+    mapaDomicilio.on('click', function(e) {
+        colocarMarcadorDomicilio(e.latlng.lat, e.latlng.lng);
+        obtenerDireccionDesdeCoordenadas(e.latlng.lat, e.latlng.lng);
+    });
+
+    var direccionGuardada = document.getElementById('direccionEntrega').value.trim();
+    if (direccionGuardada) {
+        buscaCoordenadasDireccion(direccionGuardada);
+    }
+}
+
+// ============================================
+// COLOCAR MARCADOR MOVIBLE EN EL MAPA
+// ============================================
+function colocarMarcadorDomicilio(lat, lon) {
+    if (!mapaDomicilio) return;
+
+    if (marcadorDomicilio) {
+        marcadorDomicilio.setLatLng([lat, lon]);
+    } else {
+        marcadorDomicilio = L.marker([lat, lon], { draggable: true }).addTo(mapaDomicilio)
+            .bindPopup('📍 Arrastra el punto rojo para ajustar tu ubicación');
+        marcadorDomicilio.on('dragend', function(e) {
+            var p = e.target.getLatLng();
+            obtenerDireccionDesdeCoordenadas(p.lat, p.lng);
+        });
+    }
+
+    mapaDomicilio.setView([lat, lon], 17);
+    marcadorDomicilio.openPopup();
+}
+
+// ============================================
+// OBTENER DIRECCIÓN DESDE COORDENADAS
+// ============================================
+function obtenerDireccionDesdeCoordenadas(lat, lon) {
+    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lon)
+        .then(function(resp) { return resp.json(); })
+        .then(function(data) {
+            if (data && data.display_name) {
+                document.getElementById('direccionEntrega').value = data.display_name;
+                direccionMarcada = true;
+            }
+        })
+        .catch(function() {});
+}
+
+// ============================================
+// GEOCÓDIFICAR DIRECCIÓN GUARDADA
+// ============================================
+function buscaCoordenadasDireccion(direccion) {
+    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=pe&q=' + encodeURIComponent(direccion))
+        .then(function(resp) { return resp.json(); })
+        .then(function(resultados) {
+            if (resultados && resultados.length > 0 && mapaDomicilio) {
+                var r = resultados[0];
+                colocarMarcadorDomicilio(parseFloat(r.lat), parseFloat(r.lon));
+            }
+        })
+        .catch(function() {});
+}
+
+// ============================================
 // VALIDAR DOCUMENTO
 // ============================================
 function validarDocumento(input) {
+    manualVerificado = false;
+    var manualBtn = document.getElementById('btnManualOverride');
+    if (manualBtn) { manualBtn.style.display = 'none'; }
+
     var value = input.value.replace(/\D/g, '');
     var maxLength = tipoComprobante === 'boleta' ? 8 : 11;
     
@@ -542,6 +919,7 @@ function validarDocumento(input) {
         info.textContent = '✅ Documento válido';
         info.style.color = '#16a34a';
         mostrarConfirmacion(value);
+        try { localStorage.setItem('checkoutDocumento', JSON.stringify({ tipo: tipoComprobante, documento: value })); } catch (e) {}
     } else {
         input.classList.add('is-invalid');
         error.classList.add('show');
@@ -585,12 +963,14 @@ function mostrarConfirmacion(documento) {
                     confirmNombreCompleto.textContent = '⚠️ DNI no encontrado en RENIEC';
                     badge.textContent = '⚠️ No verificado';
                     badge.className = 'badge-error';
+                    mostrarManualOverride();
                 }
             })
             .catch(() => {
                 confirmNombreCompleto.textContent = '⚠️ Error al consultar DNI';
                 badge.textContent = '⚠️ Error';
                 badge.className = 'badge-error';
+                mostrarManualOverride();
             });
     } else {
         confirmNombre.style.display = 'none';
@@ -609,14 +989,69 @@ function mostrarConfirmacion(documento) {
                     confirmRazonSocial.textContent = '⚠️ RUC no encontrado en SUNAT';
                     badge.textContent = '⚠️ No verificado';
                     badge.className = 'badge-error';
+                    mostrarManualOverride();
                 }
             })
             .catch(() => {
                 confirmRazonSocial.textContent = '⚠️ Error al consultar RUC';
                 badge.textContent = '⚠️ Error';
                 badge.className = 'badge-error';
+                mostrarManualOverride();
             });
     }
+}
+
+function mostrarManualOverride() {
+    var mb = document.getElementById('btnManualOverride');
+    if (mb) { mb.style.display = 'inline-block'; }
+}
+
+function usarManualOverride() {
+    Swal.fire({
+        icon: 'question',
+        title: 'Continuar sin verificación',
+        text: tipoComprobante === 'factura'
+            ? 'La consulta a SUNAT falló. Ingresa la razón social para continuar.'
+            : 'La consulta a RENIEC falló. Escribe el nombre completo tal como figura en tu DNI.',
+        input: 'text',
+        inputPlaceholder: tipoComprobante === 'factura' ? 'Razón social' : 'Nombre completo',
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar',
+        confirmButtonText: 'Continuar',
+        confirmButtonColor: '#D4AF37',
+        inputValidator: function(valor) {
+            return valor && valor.trim().length >= 2 ? undefined : 'Ingresa un dato válido';
+        }
+    }).then(function(result) {
+        if (!result.isConfirmed) { return; }
+        var valor = result.value.trim();
+        var badge = document.getElementById('badgeEstado');
+        if (tipoComprobante === 'factura') {
+            document.getElementById('confirmRazonSocial').textContent = valor;
+            badge.textContent = '✅ Ingreso manual';
+        } else {
+            var partes = valor.split(/\s+/);
+            var nombres = '';
+            var apellidos = '';
+            if (partes.length >= 3) {
+                nombres = partes.slice(-2).join(' ');
+                apellidos = partes.slice(0, -2).join(' ');
+            } else if (partes.length === 2) {
+                apellidos = partes[0];
+                nombres = partes[1];
+            } else {
+                nombres = partes[0] || '';
+            }
+            document.getElementById('clienteNombres').value = nombres;
+            document.getElementById('clienteApellidos').value = apellidos;
+            document.getElementById('confirmNombreCompleto').textContent = valor;
+            badge.textContent = '✅ Ingreso manual';
+        }
+        badge.className = 'badge-verified';
+        manualVerificado = true;
+        var mb = document.getElementById('btnManualOverride');
+        if (mb) { mb.style.display = 'none'; }
+    });
 }
 
 // ============================================
@@ -681,10 +1116,18 @@ function renderizarCarrito() {
     
     container.innerHTML = html;
     
+    var cuponGuardado = JSON.parse(localStorage.getItem('cuponAplicado') || 'null');
+    var descuentoGuardado = parseFloat(localStorage.getItem('descuento') || '0') || 0;
+    var costoEnvio = tipoEntrega === 'delivery' ? 5 : 0;
+    
     document.getElementById('subtotal').textContent = 'S/. ' + subtotal.toFixed(2);
-    document.getElementById('descuento').textContent = '-S/. 0.00';
-    document.getElementById('envio').textContent = 'S/. 0.00';
-    document.getElementById('total').textContent = 'S/. ' + subtotal.toFixed(2);
+    if (descuentoGuardado > 0 && cuponGuardado) {
+        document.getElementById('descuento').textContent = '-S/. ' + descuentoGuardado.toFixed(2);
+    } else {
+        document.getElementById('descuento').textContent = '-S/. 0.00';
+    }
+    document.getElementById('envio').textContent = 'S/. ' + costoEnvio.toFixed(2);
+    document.getElementById('total').textContent = 'S/. ' + (subtotal - descuentoGuardado + costoEnvio).toFixed(2);
     
     document.getElementById('btnPagar').disabled = false;
 }
@@ -758,7 +1201,7 @@ function procesarPago() {
     }
     
     var badge = document.getElementById('badgeEstado');
-    if (badge.textContent.includes('No verificado') || badge.textContent.includes('Error')) {
+    if (!manualVerificado && (badge.textContent.includes('No verificado') || badge.textContent.includes('Error'))) {
         Swal.fire({
             icon: 'warning',
             title: 'Documento no verificado',
@@ -768,6 +1211,22 @@ function procesarPago() {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-credit-card me-2"></i>Continuar con el pago';
         return;
+    }
+    
+    if (tipoEntrega === 'delivery') {
+        if (!direccion) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Dirección requerida',
+                text: 'Ingresa o busca tu dirección de entrega en el mapa.',
+                confirmButtonColor: '#D4AF37'
+            });
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-credit-card me-2"></i>Continuar con el pago';
+            return;
+        }
+    } else {
+        direccion = '';
     }
     
     // ===== PREPARAR DATOS =====
@@ -788,65 +1247,30 @@ function procesarPago() {
         cliente: cliente,
         items: carrito,
         total: parseFloat(document.getElementById('total').textContent.replace('S/. ', '').trim()) || 0,
-        tipo_entrega: 'recojo',
+        tipo_entrega: tipoEntrega,
         comprobante: {
             tipo: tipoComprobante
         }
     };
     
-    console.log('📦 Enviando pedido:', datosPedido);
+    localStorage.setItem('checkoutData', JSON.stringify({
+        cliente: cliente,
+        items: carrito,
+        total: datosPedido.total,
+        tipo_entrega: tipoEntrega,
+        tipo_comprobante: tipoComprobante,
+        direccion: direccion || '',
+        email: email,
+        telefono: telefono || '999999999',
+        documento: documento,
+        nombres: nombres,
+        apellidos: apellidos,
+        razon_social: tipoComprobante === 'factura'
+            ? (document.getElementById('confirmRazonSocial').textContent || '') : '',
+        direccion_fiscal: tipoComprobante === 'factura' ? (direccion || '') : ''
+    }));
     
-    // ===== ENVIAR AL SERVIDOR =====
-    fetch('/api/pedidos/crear', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(datosPedido)
-    })
-    .then(response => {
-        console.log('📡 Respuesta:', response.status);
-        if (!response.ok) {
-            throw new Error('Error en el servidor: ' + response.status);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('✅ Datos recibidos:', data);
-        if (data.success) {
-            localStorage.removeItem('carritoCliente');
-            
-            Swal.fire({
-                icon: 'success',
-                title: '✅ ¡Pedido realizado!',
-                text: 'Tu pedido ha sido registrado exitosamente.',
-                confirmButtonColor: '#D4AF37',
-                confirmButtonText: 'Ver mis pedidos'
-            }).then(() => {
-                window.location.href = '/mis-pedidos';
-            });
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: '❌ Error al procesar',
-                text: data.error || 'Hubo un problema al procesar tu pedido.',
-                confirmButtonColor: '#D4AF37'
-            });
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-credit-card me-2"></i>Continuar con el pago';
-        }
-    })
-    .catch(error => {
-        console.error('❌ Error:', error);
-        Swal.fire({
-            icon: 'error',
-            title: '❌ Error de conexión',
-            text: 'No se pudo conectar con el servidor. Intenta nuevamente.\n' + error.message,
-            confirmButtonColor: '#D4AF37'
-        });
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-credit-card me-2"></i>Continuar con el pago';
-    });
+    window.location.href = '/pago';
 }
 
 // ============================================
@@ -855,6 +1279,12 @@ function procesarPago() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Checkout cargado correctamente');
     cargarCarrito();
+    
+    if (tipoEntrega === 'delivery') {
+        seleccionarEntrega('delivery');
+    } else {
+        seleccionarEntrega('recojo');
+    }
     
     var contador = document.getElementById('carritoContador');
     if (contador) {
@@ -870,9 +1300,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     var dniInput = document.getElementById('documentoInput');
     var dniValue = '{{ cliente.dni if cliente else "" }}';
+    if (!dniValue) {
+        try {
+            var docGuardado = JSON.parse(localStorage.getItem('checkoutDocumento') || 'null');
+            if (docGuardado && docGuardado.documento) {
+                if (docGuardado.tipo === 'factura') {
+                    seleccionarComprobante('factura');
+                }
+                dniValue = docGuardado.documento;
+            }
+        } catch (e) {}
+    }
     if (dniInput && dniValue) {
         dniInput.value = dniValue;
-        if (dniValue.length === 8) {
+        var maxDoc = tipoComprobante === 'boleta' ? 8 : 11;
+        if (dniValue.length === maxDoc) {
             validarDocumento(dniInput);
         }
     }

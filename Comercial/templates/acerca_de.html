@@ -7,9 +7,9 @@
         <div class="col-12">
             <div class="card shadow border-0 mb-4 rounded-3 overflow-hidden">
                 <!-- HEADER RESPONSIVE -->
-                <div class="card-header bg-primary text-white text-center py-3 py-sm-4 py-md-5">
-                    <i class="fas fa-book-open fa-3x fa-sm-4x mb-2 mb-sm-3"></i>
-                    <h2 class="mb-0 fs-2 fs-sm-1 fs-md-0">Librería Salesiana Don Bosco</h2>
+                <div class="card-header text-white text-center py-3 py-sm-4 py-md-5" style="background: linear-gradient(135deg, #0F2B5E, #1E3A8A); border-bottom: 3px solid var(--salesiano-gold);">
+                    <i class="fas fa-book-open fa-3x fa-sm-4x mb-2 mb-sm-3" style="color: var(--salesiano-gold); filter: drop-shadow(0 0 12px rgba(212,175,55,.5));"></i>
+                    <h2 class="mb-0 fs-2 fs-sm-1 fs-md-0" style="font-family:'Playfair Display',serif;">Librería Salesiana Don Bosco</h2>
                     <p class="mt-2 mb-0 opacity-75 small px-2">"Formando buenos cristianos y honrados ciudadanos"</p>
                 </div>
 
@@ -157,6 +157,16 @@
     .card:hover {
         transform: translateY(-3px);
         box-shadow: 0 15px 35px rgba(0,0,0,0.1) !important;
+    }
+
+    /* Acentos navy/oro */
+    h4.fs-5, h5.fs-6 {
+        font-family: 'Playfair Display', serif;
+        color: var(--salesiano-navy);
+    }
+    h4.fs-5 i, h5.fs-6 i {
+        color: var(--salesiano-gold) !important;
+        filter: drop-shadow(0 2px 6px rgba(212, 175, 55, 0.4));
     }
 </style>
 {% endblock %}
