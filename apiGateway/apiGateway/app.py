@@ -141,7 +141,7 @@ def proxy_inventario_api(path):
     return proxy_request(request.method, INVENTARIO_URL, path, public_prefix="/api/inventario")
 
 
-@app.route("/inventario", defaults={"path": ""})
+@app.route("/inventario", defaults={"path": ""}, strict_slashes=False)
 @app.route("/inventario/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 def proxy_inventario(path):
     return proxy_request(request.method, INVENTARIO_URL, path, public_prefix="/inventario")

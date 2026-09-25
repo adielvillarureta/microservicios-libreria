@@ -55,30 +55,85 @@ def create_app():
         if 'usuario_id' not in session:
             return redirect(url_for('usuario.login'))
 
+        from sqlalchemy import func
+
         total_productos = Producto.query.count()
         stock_bajo = Producto.query.filter(Producto.cantidad <= 5, Producto.cantidad > 0).all()
         stock_critico = Producto.query.filter(Producto.cantidad == 0).all()
         total_proveedores = Proveedor.query.count()
+        con_stock = Producto.query.filter(Producto.cantidad > 0).count()
+        valor_inventario = db.session.query(
+            func.coalesce(func.sum(Producto.precio * Producto.cantidad), 0)
+        ).scalar() or 0
+
+        top_productos = [
+            {"nombre": p.nombre, "imagen": p.imagen, "total_vendido": p.cantidad,
+             "valor": float(p.precio or 0) * (p.cantidad or 0)}
+            for p in sorted(
+                Producto.query.filter(Producto.cantidad > 0).all(),
+                key=lambda p: float(p.precio or 0) * (p.cantidad or 0),
+                reverse=True,
+            )[:8]
+        ]
+
+        por_categoria = db.session.query(
+            Categoria.nombre, func.count(Producto.id)
+        ).join(Producto, Producto.id_categoria == Categoria.id_categoria)\
+         .group_by(Categoria.nombre).all()
+        por_proveedor = db.session.query(
+            Proveedor.nombre, func.count(Producto.id)
+        ).join(Producto, Producto.proveedor_id == Proveedor.id)\
+         .group_by(Proveedor.nombre).all()
+
+        base_layout = {"template": "plotly_white", "margin": {"t": 40, "b": 40, "l": 50, "r": 20},
+                       "height": 300, "showlegend": False}
+        graph_ventas = {
+            "data": [{"type": "bar",
+                      "x": [c[0] for c in por_categoria],
+                      "y": [c[1] for c in por_categoria],
+                      "marker": {"color": "#1E3A8A"}}],
+            "layout": dict(base_layout, title="Productos por categoría"),
+        }
+        graph_cat = {
+            "data": [{"type": "pie", "labels": [c[0] for c in por_categoria],
+                      "values": [c[1] for c in por_categoria]}],
+            "layout": {"template": "plotly_white", "margin": {"t": 40, "b": 20, "l": 20, "r": 20},
+                       "height": 280, "title": "Distribución por categoría", "showlegend": True},
+        }
+        graph_top = {
+            "data": [{"type": "bar", "orientation": "h",
+                      "y": [p["nombre"][:22] for p in top_productos][::-1],
+                      "x": [p["valor"] for p in top_productos][::-1],
+                      "marker": {"color": "#D4AF37"}}],
+            "layout": dict(base_layout, title="Valor de inventario por producto (S/)", showlegend=False),
+        }
+        graph_estados = {
+            "data": [{"type": "pie", "labels": ["Con stock", "Stock bajo", "Agotados"],
+                      "values": [con_stock, len(stock_bajo), len(stock_critico)],
+                      "hole": 0.55}],
+            "layout": {"template": "plotly_white", "margin": {"t": 40, "b": 20, "l": 20, "r": 20},
+                       "height": 280, "title": "Estado del stock", "showlegend": True},
+        }
 
         return render_template(
             'dashboard.html',
-            total_ventas_hoy=0,
-            cantidad_ventas_hoy=0,
-            total_ventas_mes=0,
-            cantidad_ventas_mes=0,
-            pedidos_pendientes=0,
-            pedidos_en_proceso=0,
-            total_clientes=0,
+            valor_inventario=float(valor_inventario),
+            con_stock=con_stock,
+            stock_bajo_count=len(stock_bajo),
+            agotados_count=len(stock_critico),
+            pedidos_pendientes=len(stock_bajo),
+            pedidos_en_proceso=len(stock_critico),
+            total_clientes=total_proveedores,
             clientes_nuevos=0,
             stock_bajo=stock_bajo,
             stock_critico=stock_critico,
             total_productos=total_productos,
             total_proveedores=total_proveedores,
-            top_productos=[],
-            graph_ventas={"data": [], "layout": {}},
-            graph_top={"data": [], "layout": {}},
-            graph_cat={"data": [], "layout": {}},
-            graph_estados={"data": [], "layout": {}},
+            top_productos=top_productos,
+            graph_ventas=graph_ventas,
+            graph_top=graph_top,
+            graph_cat=graph_cat,
+            graph_estados=graph_estados,
             ahora_peru=datetime.now()
         )
 

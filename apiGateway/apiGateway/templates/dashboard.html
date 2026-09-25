@@ -42,22 +42,27 @@
         }
 
         .status-card .card-body {
-            padding: 1.5rem;
+            padding: 1.75rem;
         }
 
         .status-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 14px;
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.6rem;
+            font-size: 1.7rem;
         }
 
         .icon-comercial {
             background: rgba(212, 175, 55, 0.15);
             color: #b8942f;
+        }
+
+        .icon-gateway {
+            background: rgba(59, 130, 246, 0.15);
+            color: #1E3A8A;
         }
 
         .icon-inventario {
@@ -69,17 +74,6 @@
             font-size: 0.8rem;
         }
 
-        .route-table {
-            font-size: 0.85rem;
-        }
-
-        .route-table code {
-            background: #f1f5f9;
-            padding: 0.2rem 0.5rem;
-            border-radius: 6px;
-            font-size: 0.8rem;
-        }
-
         .refresh-btn {
             border-radius: 12px;
             font-weight: 600;
@@ -88,6 +82,12 @@
         .footer-gateway {
             color: #64748b;
             font-size: 0.8rem;
+        }
+
+        .btn-abrir {
+            border-radius: 12px;
+            font-weight: 700;
+            padding: 0.7rem 1rem;
         }
     </style>
 </head>
@@ -115,181 +115,123 @@
     </nav>
 
     <div class="container py-4">
-        <!-- ACCESO RÁPIDO -->
-        <div class="card status-card mb-4">
-            <div class="card-body">
-                <h5 class="fw-bold mb-3"><i class="fas fa-bolt me-2 text-warning"></i>Acceso rápido (todo desde el puerto 8000)</h5>
-                <div class="row g-2">
-                    <div class="col-12 col-sm-6 col-lg-3">
-                        <a href="/" target="_blank" class="btn btn-outline-dark w-100 py-3 rounded-3">
-                            <i class="fas fa-store me-2"></i>Tienda (inicio)
-                        </a>
-                    </div>
-                    <div class="col-12 col-sm-6 col-lg-3">
-                        <a href="/catalogo" target="_blank" class="btn btn-outline-primary w-100 py-3 rounded-3">
-                            <i class="fas fa-book-open me-2"></i>Catálogo de productos
-                        </a>
-                    </div>
-                    <div class="col-12 col-sm-6 col-lg-3">
-                        <a href="/login-cliente" target="_blank" class="btn btn-outline-info w-100 py-3 rounded-3">
-                            <i class="fas fa-user me-2"></i>Login cliente
-                        </a>
-                    </div>
-                    <div class="col-12 col-sm-6 col-lg-3">
-                        <a href="{{ inventario_url }}/login" target="_blank" class="btn btn-outline-success w-100 py-3 rounded-3">
-                            <i class="fas fa-warehouse me-2"></i>Panel de inventario
-                        </a>
-                    </div>
-                </div>
+        <!-- ESTADO GLOBAL -->
+        <div id="estadoGlobal"
+             class="alert alert-{{ 'success' if comercial.status == 'active' and inventario.status == 'active' else 'danger' }} d-flex align-items-center rounded-4 shadow-sm mb-4"
+             role="alert">
+            {% if comercial.status == 'active' and inventario.status == 'active' %}
+            <i class="fas fa-check-circle fa-lg me-3"></i>
+            <div>
+                <strong>Todo está bien.</strong>
+                Los 3 servicios (Comercial, API Gateway e Inventario) están operativos.
             </div>
+            {% else %}
+            <i class="fas fa-exclamation-triangle fa-lg me-3"></i>
+            <div>
+                <strong>Hay servicios caídos:</strong>
+                {% if comercial.status != 'active' %}Comercial{% endif %}
+                {% if inventario.status != 'active' %}Inventario{% endif %}
+            </div>
+            {% endif %}
         </div>
 
-        <!-- TARJETAS DE ESTADO -->
-        <div class="row g-3 mb-4">
+        <!-- TRES SERVICIOS -->
+        <div class="row g-3">
             <!-- COMERCIAL -->
-            <div class="col-12 col-md-6">
+            <div class="col-12 col-md-4">
                 <div class="card status-card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="status-icon icon-comercial">
-                                    <i class="fas fa-store"></i>
-                                </div>
-                                <div>
-                                    <h5 class="mb-0 fw-bold">Microservicio Comercial</h5>
-                                    <span class="text-muted small">Ventas · Pedidos · Clientes</span>
-                                </div>
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="status-icon icon-comercial">
+                                <i class="fas fa-store"></i>
                             </div>
-                            <span id="badgeComercial" class="badge {{ 'bg-success' if comercial.status == 'active' else 'bg-danger' }}">
-                                {{ 'ACTIVO' if comercial.status == 'active' else 'INACTIVO' }}
-                            </span>
+                            <div>
+                                <h5 class="mb-0 fw-bold">Comercial</h5>
+                                <span class="text-muted small">Ventas · Pedidos · Clientes</span>
+                            </div>
                         </div>
                         <div class="d-flex flex-wrap gap-2 mb-3">
+                            <span id="badgeComercial"
+                                  class="badge {{ 'bg-success' if comercial.status == 'active' else 'bg-danger' }}">
+                                {{ 'ACTIVO' if comercial.status == 'active' else 'INACTIVO' }}
+                            </span>
                             <span class="badge badge-latency bg-light text-dark border">
                                 <i class="fas fa-tachometer-alt me-1"></i>
-                                Latencia: <span id="latenciaComercial">{{ comercial.latency_ms if comercial.latency_ms is not none else '—' }}</span> ms
+                                <span id="latenciaComercial">{{ comercial.latency_ms if comercial.latency_ms is not none else '—' }}</span> ms
                             </span>
                             <span class="badge badge-latency bg-light text-dark border">
                                 <i class="fas fa-link me-1"></i>{{ comercial_url }}
                             </span>
                         </div>
-                        <div class="d-flex gap-2">
-                            <a class="btn btn-sm btn-primary" href="/api/comercial/health" target="_blank">
-                                <i class="fas fa-heartbeat me-1"></i>Health
-                            </a>
-                            <a class="btn btn-sm btn-outline-primary" href="/catalogo" target="_blank">
-                                <i class="fas fa-external-link-alt me-1"></i>Abrir tienda
-                            </a>
+                        <a class="btn btn-primary btn-abrir w-100 mt-auto" href="{{ comercial_url }}/" target="_blank">
+                            <i class="fas fa-external-link-alt me-2"></i>Abrir Comercial
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API GATEWAY -->
+            <div class="col-12 col-md-4">
+                <div class="card status-card h-100">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="status-icon icon-gateway">
+                                <i class="fas fa-network-wired"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-bold">API Gateway</h5>
+                                <span class="text-muted small">Enrutamiento · Proxy · Estado</span>
+                            </div>
                         </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <span class="badge {{ 'bg-success' if gateway == 'active' else 'bg-danger' }}">
+                                {{ 'ACTIVO' if gateway == 'active' else 'INACTIVO' }}
+                            </span>
+                            <span class="badge badge-latency bg-light text-dark border">
+                                <i class="fas fa-link me-1"></i>http://localhost:8000
+                            </span>
+                            <span class="badge badge-latency bg-light text-dark border">
+                                <i class="fas fa-heartbeat me-1"></i>
+                                <a href="/health" target="_blank" class="text-decoration-none">health</a>
+                            </span>
+                        </div>
+                        <a class="btn btn-dark btn-abrir w-100 mt-auto" href="/" target="_blank">
+                            <i class="fas fa-th-large me-2"></i>Abrir API Gateway
+                        </a>
                     </div>
                 </div>
             </div>
 
             <!-- INVENTARIO -->
-            <div class="col-12 col-md-6">
+            <div class="col-12 col-md-4">
                 <div class="card status-card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="status-icon icon-inventario">
-                                    <i class="fas fa-warehouse"></i>
-                                </div>
-                                <div>
-                                    <h5 class="mb-0 fw-bold">Microservicio Inventario</h5>
-                                    <span class="text-muted small">Productos · Proveedores · Stock</span>
-                                </div>
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="status-icon icon-inventario">
+                                <i class="fas fa-warehouse"></i>
                             </div>
-                            <span id="badgeInventario" class="badge {{ 'bg-success' if inventario.status == 'active' else 'bg-danger' }}">
-                                {{ 'ACTIVO' if inventario.status == 'active' else 'INACTIVO' }}
-                            </span>
+                            <div>
+                                <h5 class="mb-0 fw-bold">Inventario</h5>
+                                <span class="text-muted small">Productos · Proveedores · Stock</span>
+                            </div>
                         </div>
                         <div class="d-flex flex-wrap gap-2 mb-3">
+                            <span id="badgeInventario"
+                                  class="badge {{ 'bg-success' if inventario.status == 'active' else 'bg-danger' }}">
+                                {{ 'ACTIVO' if inventario.status == 'active' else 'INACTIVO' }}
+                            </span>
                             <span class="badge badge-latency bg-light text-dark border">
                                 <i class="fas fa-tachometer-alt me-1"></i>
-                                Latencia: <span id="latenciaInventario">{{ inventario.latency_ms if inventario.latency_ms is not none else '—' }}</span> ms
+                                <span id="latenciaInventario">{{ inventario.latency_ms if inventario.latency_ms is not none else '—' }}</span> ms
                             </span>
                             <span class="badge badge-latency bg-light text-dark border">
                                 <i class="fas fa-link me-1"></i>{{ inventario_url }}
                             </span>
                         </div>
-                        <div class="d-flex gap-2">
-                            <a class="btn btn-sm btn-success" href="/api/inventario/health" target="_blank">
-                                <i class="fas fa-heartbeat me-1"></i>Health
-                            </a>
-                            <a class="btn btn-sm btn-outline-success" href="{{ inventario_url }}/login" target="_blank">
-                                <i class="fas fa-external-link-alt me-1"></i>Panel inventario
-                            </a>
-                        </div>
+                        <a class="btn btn-success btn-abrir w-100 mt-auto" href="{{ inventario_url }}/login" target="_blank">
+                            <i class="fas fa-external-link-alt me-2"></i>Abrir Inventario
+                        </a>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- RUTAS DISPONIBLES -->
-        <div class="card status-card">
-            <div class="card-body">
-                <h5 class="fw-bold mb-3"><i class="fas fa-route me-2 text-primary"></i>Rutas del Gateway</h5>
-                <div class="table-responsive">
-                    <table class="table table-hover route-table align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Ruta</th>
-                                <th>Método</th>
-                                <th>Destino</th>
-                                <th>Descripción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>/</code></td>
-                                <td><span class="badge bg-secondary">GET</span></td>
-                                <td>Gateway</td>
-                                <td>Dashboard del API Gateway</td>
-                            </tr>
-                            <tr>
-                                <td><code>/health</code></td>
-                                <td><span class="badge bg-secondary">GET</span></td>
-                                <td>Gateway</td>
-                                <td>Estado de los microservicios (JSON)</td>
-                            </tr>
-                            <tr>
-                                <td><code>/catalogo</code></td>
-                                <td><span class="badge bg-secondary">GET</span></td>
-                                <td>Comercial</td>
-                                <td>Catálogo de productos para clientes</td>
-                            </tr>
-                            <tr>
-                                <td><code>/login-cliente</code></td>
-                                <td><span class="badge bg-secondary">GET/POST</span></td>
-                                <td>Comercial</td>
-                                <td>Login de clientes</td>
-                            </tr>
-                            <tr>
-                                <td><code>/inventario/login</code></td>
-                                <td><span class="badge bg-secondary">GET/POST</span></td>
-                                <td>Inventario</td>
-                                <td>Login del panel administrativo</td>
-                            </tr>
-                            <tr>
-                                <td><code>/api/comercial/&lt;path&gt;</code></td>
-                                <td><span class="badge bg-secondary">ALL</span></td>
-                                <td>Comercial</td>
-                                <td>Proxy de la API comercial</td>
-                            </tr>
-                            <tr>
-                                <td><code>/api/inventario/&lt;path&gt;</code></td>
-                                <td><span class="badge bg-secondary">ALL</span></td>
-                                <td>Inventario</td>
-                                <td>Proxy de la API de inventario</td>
-                            </tr>
-                            <tr>
-                                <td><code>/inventario/&lt;path&gt;</code></td>
-                                <td><span class="badge bg-secondary">ALL</span></td>
-                                <td>Inventario</td>
-                                <td>Proxy inteligente a Inventario</td>
-                            </tr>
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>
@@ -302,6 +244,20 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function pintarEstadoGlobal(c, i) {
+            const banner = document.getElementById('estadoGlobal');
+            const ok = c.status === 'active' && i.status === 'active';
+            banner.className = 'alert d-flex align-items-center rounded-4 shadow-sm mb-4 alert-' + (ok ? 'success' : 'danger');
+            if (ok) {
+                banner.innerHTML = '<i class="fas fa-check-circle fa-lg me-3"></i><div><strong>Todo está bien.</strong> Los 3 servicios (Comercial, API Gateway e Inventario) están operativos.</div>';
+            } else {
+                const caidos = [];
+                if (c.status !== 'active') caidos.push('Comercial');
+                if (i.status !== 'active') caidos.push('Inventario');
+                banner.innerHTML = '<i class="fas fa-exclamation-triangle fa-lg me-3"></i><div><strong>Hay servicios caídos:</strong> ' + caidos.join(', ') + '</div>';
+            }
+        }
+
         async function refrescarEstado() {
             const btn = document.querySelector('.refresh-btn');
             btn.disabled = true;
@@ -324,6 +280,8 @@
                 badgeI.className = 'badge ' + (i.status === 'active' ? 'bg-success' : 'bg-danger');
                 badgeI.textContent = i.status === 'active' ? 'ACTIVO' : 'INACTIVO';
                 document.getElementById('latenciaInventario').textContent = i.latency_ms != null ? i.latency_ms : '—';
+
+                pintarEstadoGlobal(c, i);
             } catch (e) {
                 console.error('Error al refrescar estado:', e);
             } finally {
