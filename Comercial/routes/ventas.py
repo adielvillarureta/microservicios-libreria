@@ -30,8 +30,20 @@ def _obtener_vendedores():
 
 
 def _enriquecer_venta(venta):
-    venta.producto = venta.producto_nombre
-    vendedor = UsuarioSistema.query.get(venta.vendedor_id) if venta.vendedor_id else None
+    # El nombre del producto ya no se guarda desnormalizado en ventas: se arma
+    # desde el detalle de la venta (detalle_ventas).
+    nombres = [d.nombre_producto for d in venta.detalles]
+    if len(nombres) > 3:
+        resumen = ', '.join(nombres[:3]) + f' y {len(nombres) - 3} más'
+    else:
+        resumen = ', '.join(nombres)
+    venta.producto = resumen or 'Sin detalle'
+    venta.producto_nombre = venta.producto
+    cantidad = sum(d.cantidad for d in venta.detalles)
+    venta.cantidad_total = cantidad
+    # las plantillas legacy leen venta.cantidad, que ya no es columna
+    venta.cantidad = cantidad
+    vendedor = db.session.get(UsuarioSistema, venta.vendedor_id) if venta.vendedor_id else None
     venta.vendedor_nombres = vendedor.nombres if vendedor else None
     venta.vendedor_apellidos = vendedor.apellidos if vendedor else None
     return venta
@@ -115,13 +127,31 @@ def listar_ventas():
     query = Venta.query
     if vendedor_id:
         query = query.filter(Venta.vendedor_id == vendedor_id)
-    ventas = [ _enriquecer_venta(v) for v in query.order_by(Venta.fecha_venta.desc()).all() ]
+
+    total_ventas = query.count()
+    por_pagina = 50
+    pagina = max(1, request.args.get('pagina', 1, type=int))
+    total_paginas = max(1, (total_ventas + por_pagina - 1) // por_pagina)
+    pagina = min(pagina, total_paginas)
+
+    ventas = [
+        _enriquecer_venta(v)
+        for v in query.order_by(Venta.fecha_venta.desc())
+        .offset((pagina - 1) * por_pagina)
+        .limit(por_pagina)
+        .all()
+    ]
+
     return render_template(
         'ventas.html',
         ventas=ventas,
         vendedores=_obtener_vendedores(),
         vendedor_id_actual=vendedor_id,
-        rol_usuario=rol
+        rol_usuario=rol,
+        pagina=pagina,
+        total_paginas=total_paginas,
+        por_pagina=por_pagina,
+        total_ventas=total_ventas
     )
 
 

@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+{% block titulito %}Portada del Proyecto - Inteligencia de Negocios{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/kpi.css') }}" rel="stylesheet">
+<style>
+    body { background: #eef2f7; }
+
+    .portada {
+        max-width: 980px;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 22px 55px -28px rgba(16, 24, 40, .45);
+        overflow: hidden;
+    }
+
+    .portada__top {
+        background: linear-gradient(135deg, #0f2027 0%, #1e3a8a 50%, #4c1d95 100%);
+        color: #fff;
+        padding: 2.4rem 2rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .portada__top::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 15% 20%, rgba(255, 215, 0, .18), transparent 42%),
+            radial-gradient(circle at 85% 80%, rgba(16, 185, 129, .2), transparent 45%);
+    }
+
+    .portada__top > * { position: relative; z-index: 1; }
+
+    .portada__escudo {
+        width: 88px;
+        height: 88px;
+        margin: 0 auto 1rem;
+        border-radius: 50%;
+        border: 3px solid rgba(255, 215, 0, .85);
+        display: grid;
+        place-items: center;
+        font-size: 2.3rem;
+        color: #ffd700;
+        background: rgba(255, 255, 255, .08);
+    }
+
+    .portada__institucion {
+        font-size: .78rem;
+        letter-spacing: .18em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, .8);
+        font-weight: 600;
+    }
+
+    .portada__carrera {
+        font-size: 1.05rem;
+        color: #ffd700;
+        font-weight: 700;
+        margin-top: .25rem;
+    }
+
+    .portada__unidad {
+        margin-top: 1.4rem;
+        display: inline-block;
+        background: rgba(255, 255, 255, .13);
+        border: 1px solid rgba(255, 255, 255, .28);
+        border-radius: 999px;
+        padding: .45rem 1.3rem;
+        font-weight: 700;
+        font-size: .92rem;
+    }
+
+    .portada__empresa {
+        margin-top: 1.6rem;
+        font-size: .7rem;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, .62);
+    }
+
+    .portada__titulo {
+        font-size: clamp(1.5rem, 3.6vw, 2.3rem);
+        font-weight: 800;
+        line-height: 1.2;
+        margin: .4rem 0 .3rem;
+    }
+
+    .portada__cuerpo { padding: 2rem; }
+
+    .dato-fila {
+        display: flex;
+        gap: .9rem;
+        align-items: flex-start;
+        padding: .8rem 0;
+        border-bottom: 1px dashed #e6eaf2;
+    }
+
+    .dato-fila:last-child { border-bottom: none; }
+
+    .dato-fila__icono {
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        background: #eef2ff;
+        color: #1e3a8a;
+        font-size: .85rem;
+    }
+
+    .dato-fila__label {
+        font-size: .68rem;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: #667085;
+        font-weight: 700;
+    }
+
+    .dato-fila__valor { font-size: .95rem; color: #101828; font-weight: 500; }
+
+    .integrante {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        background: #f8fafc;
+        border: 1px solid #eef2f7;
+        border-radius: 12px;
+        padding: .8rem .9rem;
+        height: 100%;
+    }
+
+    .integrante__ini {
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+        color: #fff;
+        font-size: .95rem;
+    }
+
+    .portada__pie {
+        background: #f8fafc;
+        border-top: 1px solid #e6eaf2;
+        padding: 1.1rem 2rem;
+        text-align: center;
+        font-size: .8rem;
+        color: #667085;
+        font-weight: 600;
+    }
+
+    .resumen-chip {
+        background: #fff;
+        border: 1px solid #e6eaf2;
+        border-radius: 12px;
+        padding: .75rem .9rem;
+        text-align: center;
+    }
+
+    .resumen-chip b { display: block; font-size: 1.5rem; color: #1e3a8a; line-height: 1.1; }
+    .resumen-chip span { font-size: .66rem; color: #667085; text-transform: uppercase; letter-spacing: .05em; }
+</style>
+{% endblock %}
+
+{% block contenido %}
+<div class="container px-2 px-md-3 py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+        <a href="/kpis" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Volver al Tablero de KPIs
+        </a>
+        <button class="btn btn-sm btn-primary" onclick="window.print()">
+            <i class="fas fa-print me-1"></i> Imprimir / PDF
+        </button>
+    </div>
+
+    <div class="portada">
+
+        <!-- ================= ENCABEZADO ================= -->
+        <div class="portada__top">
+            <div class="portada__escudo"><i class="fas fa-book-open"></i></div>
+
+            <div class="portada__institucion">Escuela Profesional de Tecnología</div>
+            <div class="portada__carrera">Carrera Profesional de Desarrollo de Sistemas de Información</div>
+
+            <div class="portada__unidad">
+                <i class="fas fa-graduation-cap me-2"></i>Informe de la Unidad Didáctica:
+                Inteligencia de Negocios
+            </div>
+
+            <div class="portada__empresa">Sistema de Gestión para</div>
+            <h1 class="portada__titulo">Librería Salesiana Don Bosco</h1>
+            <p class="mb-0" style="color:rgba(255,255,255,.78)">
+                Tablero de Indicadores Estratégicos del Negocio (KPIs) sobre microservicios
+            </p>
+        </div>
+
+        <!-- ================= CUERPO ================= -->
+        <div class="portada__cuerpo">
+
+            <h5 class="fw-bold mb-3">
+                <i class="fas fa-file-lines me-2 text-primary"></i>Datos generales
+            </h5>
+
+            <div class="row g-2 mb-4">
+                <div class="col-12 col-md-6">
+                    <div class="dato-fila">
+                        <div class="dato-fila__icono"><i class="fas fa-store"></i></div>
+                        <div>
+                            <div class="dato-fila__label">Nombre de la empresa</div>
+                            <div class="dato-fila__valor">Librería Salesiana Don Bosco</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="dato-fila">
+                        <div class="dato-fila__icono"><i class="fas fa-map-marker-alt"></i></div>
+                        <div>
+                            <div class="dato-fila__label">Ubicación</div>
+                            <div class="dato-fila__valor">Huancayo – Perú</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="dato-fila">
+                        <div class="dato-fila__icono"><i class="fas fa-book"></i></div>
+                        <div>
+                            <div class="dato-fila__label">Informe de la unidad didáctica</div>
+                            <div class="dato-fila__valor">Inteligencia de Negocios</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="dato-fila">
+                        <div class="dato-fila__icono"><i class="fas fa-user-tie"></i></div>
+                        <div>
+                            <div class="dato-fila__label">Solicitado por</div>
+                            <div class="dato-fila__valor">Carlos Arturo Priale Condori</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3">
+                <i class="fas fa-users me-2 text-primary"></i>Presentado por
+            </h5>
+
+            <div class="row g-2 mb-4">
+                <div class="col-12 col-md-6">
+                    <div class="integrante">
+                        <div class="integrante__ini" style="background:#1e3a8a">JU</div>
+                        <div>
+                            <div class="dato-fila__label">Integrante</div>
+                            <div class="dato-fila__valor fw-semibold">Uchuypoma Lanazca, Juan Victor</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="integrante">
+                        <div class="integrante__ini" style="background:#7c3aed">RV</div>
+                        <div>
+                            <div class="dato-fila__label">Integrante</div>
+                            <div class="dato-fila__valor fw-semibold">Villar Ureta Adiel, Riko Felipe</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3">
+                <i class="fas fa-chart-line me-2 text-primary"></i>Contenido del tablero
+            </h5>
+
+            <div class="row g-2 mb-4">
+                <div class="col-4 mb-2">
+                    <div class="resumen-chip"><b>9</b><span>Indicadores</span></div>
+                </div>
+                <div class="col-4 mb-2">
+                    <div class="resumen-chip"><b>2</b><span>Microservicios</span></div>
+                </div>
+                <div class="col-4 mb-2">
+                    <div class="resumen-chip"><b>30</b><span>Tablas</span></div>
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3">
+                <i class="fas fa-sitemap me-2 text-primary"></i>Arquitectura del sistema
+            </h5>
+
+            <div class="row g-2 mb-4">
+                <div class="col-12 col-md-4">
+                    <div class="dato-fila h-100">
+                        <div class="dato-fila__icono"><i class="fas fa-boxes"></i></div>
+                        <div>
+                            <div class="dato-fila__label">Microservicio Inventario</div>
+                            <div class="dato-fila__valor" style="font-size:.84rem">
+                                Puerto <strong>5001</strong> · Base <strong>inventario_db</strong><br>
+                                <span class="text-muted">15 tablas · dueño del stock y los KPIs 5 y 6</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="dato-fila h-100">
+                        <div class="dato-fila__icono" style="background:#fff1f2;color:#dc2626">
+                            <i class="fas fa-cash-register"></i>
+                        </div>
+                        <div>
+                            <div class="dato-fila__label">Microservicio Comercial</div>
+                            <div class="dato-fila__valor" style="font-size:.84rem">
+                                Puerto <strong>5000</strong> · Base <strong>comercial_db</strong><br>
+                                <span class="text-muted">15 tablas · dueño de ventas, clientes y caja</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="dato-fila h-100">
+                        <div class="dato-fila__icono" style="background:#f0fdf4;color:#16a34a">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <div>
+                            <div class="dato-fila__label">API Gateway</div>
+                            <div class="dato-fila__valor" style="font-size:.84rem">
+                                Puerto <strong>8000</strong><br>
+                                <span class="text-muted">Punto de entrada único a los microservicios</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-light border small mb-0">
+                <i class="fas fa-lightbulb text-warning me-1"></i>
+                <strong>Nota metodológica:</strong> los indicadores no se inventan. Cada KPI se calcula
+                con consultas <code>SQL</code> sobre las tablas reales del sistema. El microservicio de
+                Inventario calcula los KPIs 5 y 6 porque es el dueño de la información de stock, y
+                obtiene los KPIs 1, 2, 3, 4, 7, 8 y 9 del microservicio Comercial a través de su API
+                <code>/api/kpi/comercial</code>. Ningún microservicio lee la base de datos del otro.
+            </div>
+        </div>
+
+        <div class="portada__pie">
+            <div>Huancayo – Perú &nbsp;·&nbsp; 2026</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

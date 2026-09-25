@@ -48,6 +48,9 @@ def create_app():
     from routes.pagos import pagos_bp
     from routes.catalogo import catalogo_bp
     from routes.admin import admin_bp
+    from routes.caja import caja_bp
+    from routes.kpi import kpi_bp
+    from routes.dashboard_api import dashboard_bp
 
     app.register_blueprint(cliente_bp)
     app.register_blueprint(pedidos_bp)
@@ -56,6 +59,9 @@ def create_app():
     app.register_blueprint(pagos_bp)
     app.register_blueprint(catalogo_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(caja_bp)
+    app.register_blueprint(kpi_bp)
+    app.register_blueprint(dashboard_bp)
 
     @app.route('/')
     def index():
@@ -108,11 +114,15 @@ def create_app():
         from models.clientes import Cliente
         from models.pedidos import Pedido
         from models.ventas import Venta
+        from models.detalleVenta import DetalleVenta
         from models.detallePedido import DetallePedido
         from models.usuarioSistema import UsuarioSistema
         from models.cupones import Cupon
         from models.intentos_login import IntentosLogin
         from models.bloqueos import Bloqueo
+        from models.cajas import Caja
+        from models.movimientoCaja import MovimientoCaja
+        from models.notificaciones import Notificacion
 
         db.create_all()
 
