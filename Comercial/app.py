@@ -143,4 +143,5 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=os.getenv('DEBUG', 'false').lower() == 'true')
+    # Comercial corre en el puerto 5001 (Inventario usa el 5000)
+    app.run(host='0.0.0.0', port=5001, debug=os.getenv('DEBUG', 'false').lower() == 'true')

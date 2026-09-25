@@ -10,7 +10,7 @@ from models.clientes import Cliente
 from models.usuarioSistema import UsuarioSistema
 from services.emailService import enviar_comprobante_email
 
-INVENTARIO_URL = os.getenv('INVENTARIO_API_URL') or os.getenv('INVENTARIO_URL', 'http://localhost:5001')
+INVENTARIO_URL = os.getenv('INVENTARIO_API_URL') or os.getenv('INVENTARIO_URL', 'http://localhost:5000')
 
 ventas_bp = Blueprint('ventas', __name__)
 

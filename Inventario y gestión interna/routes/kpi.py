@@ -28,7 +28,7 @@ kpi_bp = Blueprint('kpi', __name__)
 COMERCIAL_API_URL = (
     os.getenv('COMERCIAL_API_URL')
     or os.getenv('COMERCIAL_URL')
-    or 'http://comercial:5000'
+    or 'http://localhost:5001'
 )
 
 MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',

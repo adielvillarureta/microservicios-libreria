@@ -17,8 +17,8 @@ CORS(app)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-COMERCIAL_URL = os.getenv("COMERCIAL_URL", "http://localhost:5000")
-INVENTARIO_URL = os.getenv("INVENTARIO_URL", "http://localhost:5001")
+COMERCIAL_URL = os.getenv("COMERCIAL_URL", "http://localhost:5001")
+INVENTARIO_URL = os.getenv("INVENTARIO_URL", "http://localhost:5000")
 
 
 def proxy_request(method, service_url, path, public_prefix=""):

@@ -838,7 +838,7 @@ if __name__ == "__main__":
     print(f"  Cierres de caja            : {resumen['cajas_cerradas']} "
           f"({resumen['cajas_ok']} exactos = {resumen['cajas_ok']/resumen['cajas_cerradas']*100:.1f}%)")
     print("\n  ACCESOS:")
-    print("    Inventario  : http://localhost:5001/login   admin@admin.com / admin123")
-    print("    Comercial   : http://localhost:5000/login   admin@admin.com / admin123")
-    print("    Vendedor    : http://localhost:5000/login   vendedor@libreria.com / vendedor123")
+    print("    Comercial   : http://localhost:5001/login   admin@admin.com / admin123")
+    print("    Vendedor    : http://localhost:5001/login   vendedor@libreria.com / vendedor123")
+    print("    Inventario  : http://localhost:5000/login   admin@admin.com / admin123")
     print("=" * 70)
