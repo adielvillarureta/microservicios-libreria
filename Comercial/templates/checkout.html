@@ -523,15 +523,15 @@
                     <!-- ===== PANEL RECOJO EN TIENDA ===== -->
                     <div id="panelRecojo" class="mt-3">
                         <div class="tienda-card">
-                            <div class="tienda-nombre"><i class="fas fa-store me-2 text-gold"></i>Librería Salesiana - María Auxiliadora</div>
+                            <div class="tienda-nombre"><i class="fas fa-store me-2 text-gold"></i>Librería Salesiana Huancayo</div>
                             <div class="tienda-dato">
-                                <i class="fas fa-map-marker-alt me-2 text-danger"></i>Av. Don Bosco 123, Centro Comercial Salesiano, Lima - Perú
+                                <i class="fas fa-map-marker-alt me-2 text-danger"></i>Jr. Santa Rosa N° 299, El Tambo, Huancayo
                             </div>
                             <div class="tienda-dato">
-                                <i class="fas fa-clock me-2 text-gold"></i>Lun a Sáb: 9:00 am - 8:00 pm · Dom: 9:00 am - 1:00 pm
+                                <i class="fas fa-clock me-2 text-gold"></i>Mañanas: 9:00 am - 1:00 pm · Tardes: 4:00 pm - 7:00 pm
                             </div>
                             <a class="btn btn-como-llegar mt-2" target="_blank"
-                               href="https://www.google.com/maps/dir/?api=1&destination=Av.+Don+Bosco+123,+Lima,+Peru">
+                               href="https://www.google.com/maps/dir/?api=1&destination=Jr.+Santa+Rosa+299,+El+Tambo,+Huancayo,+Peru">
                                 <i class="fas fa-directions me-1"></i>Cómo llegar
                             </a>
                         </div>
@@ -544,7 +544,7 @@
                         <label class="field-label">Buscar tu vivienda en el mapa</label>
                         <div class="map-search-box">
                             <input type="text" id="buscarVivienda" class="form-control"
-                                   placeholder="Ej. Av. Los Alamos 123, San Borja"
+                                   placeholder="Ej. Jr. Los Rosales 123, El Tambo"
                                    onkeydown="if(event.key==='Enter'){event.preventDefault();buscarVivienda();}">
                             <button type="button" class="btn-mapa-buscar" onclick="buscarVivienda()">
                                 <i class="fas fa-search me-1"></i>Buscar
@@ -787,10 +787,10 @@ function initMapaTienda() {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(mapaTienda);
     L.marker([-12.046374, -77.042793]).addTo(mapaTienda)
-        .bindPopup('<strong>Librería Salesiana - María Auxiliadora</strong><br>Av. Don Bosco 123, Lima - Perú')
+        .bindPopup('<strong>Librería Salesiana Huancayo</strong><br>Jr. Santa Rosa N° 299, El Tambo, Huancayo')
         .openPopup();
 
-    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=pe&q=' + encodeURIComponent('Av. Don Bosco 123, Lima, Peru'))
+    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=pe&q=' + encodeURIComponent('Jr. Santa Rosa N° 299, El Tambo, Huancayo, Peru'))
         .then(function(resp) { return resp.json(); })
         .then(function(resultados) {
             if (resultados && resultados.length > 0) {

@@ -22,6 +22,7 @@ from sqlalchemy import text
 
 from extensions import db
 from models.producto import Producto
+from services.permisos import solo_gestion
 
 kpi_bp = Blueprint('kpi', __name__)
 
@@ -313,7 +314,7 @@ def api_kpi_completo():
 #  PAGINA - Tablero de Indicadores (la "otra pagina" de KPIs)
 # ---------------------------------------------------------------------------
 @kpi_bp.route('/kpis')
-@_login_requerido
+@solo_gestion
 def tablero_kpis():
     comercial, comercial_ok = obtener_kpis_comercial()
 
@@ -337,7 +338,7 @@ def tablero_kpis():
 #  PORTADA - Cubierta del proyecto
 # ---------------------------------------------------------------------------
 @kpi_bp.route('/portada')
-@_login_requerido
+@solo_gestion
 def portada():
     comercial, comercial_ok = obtener_kpis_comercial()
 

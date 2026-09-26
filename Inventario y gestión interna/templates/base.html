@@ -39,6 +39,20 @@
         </div>
     </nav>
 
+    <!-- ===== MENSAJES FLASH ===== -->
+    {% with mensajes = get_flashed_messages(with_categories = true) %}
+    {% if mensajes %}
+    <div class="container-fluid mt-3 px-3">
+        {% for categoria, mensaje in mensajes %}
+        <div class="alert alert-{{ categoria }} alert-dismissible fade show" role="alert">
+            <i class="fas fa-info-circle me-1"></i>{{ mensaje }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
     <!-- ===== PANEL DE INVENTARIO (BOTONES) ===== -->
     {% if session.usuario_id %}
     <div class="panel-inventario-wrapper">
@@ -55,8 +69,10 @@
                     </div>
 
                     <div class="col-12 col-lg-8">
+                        {% set rol = session.rol if session.usuario_id else none %}
                         <div class="admin-dashboard-grid">
-                            <a href="/kpis" class="btn-card btn-card-purple" title="Indicadores Estratégicos del Negocio (KPIs)">
+                            {% if rol in ('administrador', 'supervisor') %}
+                            <a href="/kpis" class="btn-card btn-card-purple" title="Indicadores Estrategicos del Negocio (KPIs)">
                                 <i class="fas fa-chart-line"></i>
                                 <span>KPIs</span>
                             </a>
@@ -64,10 +80,18 @@
                                 <i class="fas fa-file-alt"></i>
                                 <span>Portada</span>
                             </a>
+                            {% endif %}
                             <a href="/productos" class="btn-card btn-card-blue" title="Ver Productos">
                                 <i class="fas fa-box-open"></i>
                                 <span>Productos</span>
                             </a>
+                            {% if rol == 'vendedor' %}
+                            <a href="/mi-panel" class="btn-card btn-card-gold" title="Panel exclusivo del vendedor">
+                                <i class="fas fa-user-tie"></i>
+                                <span>Mi Panel</span>
+                            </a>
+                            {% endif %}
+                            {% if rol in ('administrador', 'supervisor') %}
                             <a href="/productos/nuevo" class="btn-card btn-card-gold" title="Nuevo Producto">
                                 <i class="fas fa-plus-circle"></i>
                                 <span>Nuevo Producto</span>
@@ -80,10 +104,21 @@
                                 <i class="fas fa-user-plus"></i>
                                 <span>Nuevo Proveedor</span>
                             </a>
+                            {% endif %}
                             <a href="/ver_productos_proveedor" class="btn-card btn-card-orange" title="Productos por Proveedor">
                                 <i class="fas fa-chart-line"></i>
                                 <span>Por Proveedor</span>
                             </a>
+                            {% if rol == 'administrador' %}
+                            <a href="/vendedores" class="btn-card btn-card-indigo" title="Gestion de vendedores">
+                                <i class="fas fa-users"></i>
+                                <span>Vendedores</span>
+                            </a>
+                            <a href="/bloqueos" class="btn-card btn-card-rose" title="Bloqueos de IP">
+                                <i class="fas fa-shield-halved"></i>
+                                <span>Bloqueos</span>
+                            </a>
+                            {% endif %}
                             <a href="/" class="btn-card btn-card-pink" title="Dashboard">
                                 <i class="fas fa-chart-pie"></i>
                                 <span>Dashboard</span>

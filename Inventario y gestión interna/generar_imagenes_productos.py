@@ -108,7 +108,7 @@ def svg_producto(categoria, nombre):
   <text x="300" y="150" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700" fill="#ffffff" opacity="0.85">{html.escape(categoria.upper())}</text>
   {icono(categoria)}
   <text x="300" y="420" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="600" fill="#ffffff">{tspans}</text>
-  <text x="300" y="560" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="19" fill="#ffffff" opacity="0.7">Librería Salesiana Don Bosco</text>
+  <text x="300" y="560" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="19" fill="#ffffff" opacity="0.7">Librería Salesiana Huancayo</text>
 </svg>
 '''
 

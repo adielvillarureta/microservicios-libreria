@@ -66,7 +66,7 @@ def generar_html_comprobante(cliente_nombre, tipo_comprobante, numero_comprobant
     </head>
     <body>
         <div class="header">
-            <h2>📚 LIBRERÍA SALESIANA DON BOSCO</h2>
+            <h2>📚 LIBRERÍA SALESIANA HUANCAYO</h2>
             <h3>{tipo_comprobante.upper()} DE VENTA ELECTRÓNICA</h3>
             <p><strong>N° {numero_comprobante}</strong></p>
         </div>
@@ -98,7 +98,7 @@ def generar_html_comprobante(cliente_nombre, tipo_comprobante, numero_comprobant
             </p>
         </div>
         <div class="footer">
-            <p>Librería Salesiana Don Bosco | Todos los derechos reservados</p>
+            <p>Librería Salesiana Huancayo | Todos los derechos reservados</p>
             <p>📧 ventas@librospe.alwaysdata.net</p>
         </div>
     </body>

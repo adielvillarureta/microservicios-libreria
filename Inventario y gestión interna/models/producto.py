@@ -1,3 +1,5 @@
+import uuid
+
 from extensions import db
 from datetime import datetime
 
@@ -8,7 +10,8 @@ class Producto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(200), nullable=False)
     descripcion = db.Column(db.Text)
-    sku = db.Column(db.String(50), unique=True)
+    sku = db.Column(db.String(50), unique=True,
+                    default=lambda: f"SKU-{uuid.uuid4().hex[:8].upper()}")
     codigo_barras = db.Column(db.String(50), unique=True)
 
     precio = db.Column(db.Numeric(10, 2), nullable=False, default=0)

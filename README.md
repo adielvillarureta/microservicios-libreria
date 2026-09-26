@@ -1,4 +1,4 @@
-# Librería Salesiana Don Bosco — Sistema de Microservicios + Tablero de KPIs
+# Librería Salesiana Huancayo — Sistema de Microservicios + Tablero de KPIs
 
 Proyecto de la unidad didáctica **Inteligencia de Negocios**.
 Huancayo – Perú · 2026

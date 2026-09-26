@@ -1,5 +1,5 @@
 # =============================================================================
-#  Librería Salesiana Don Bosco - arranque en modo LOCAL (sin Docker para las apps)
+#  Librería Salesiana Huancayo - arranque en modo LOCAL (sin Docker para las apps)
 #
 #    Comercial  -> http://localhost:5001
 #    Inventario -> http://localhost:5000

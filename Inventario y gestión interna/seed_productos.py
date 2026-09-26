@@ -19,7 +19,7 @@ CATEGORIAS = [
 
 PROVEEDORES = [
     ("Editorial Salesiana", "Editorial Salesiana Perú", "ventas@editorialsalesiana.org", "987 111 222", "Jr. Don Bosco 120, Lima"),
-    ("Librería Salesiana", "Librería Salesiana Don Bosco", "pedidos@libreriasalesiana.com", "985 222 333", "Av. Don Bosco 123, Lima"),
+    ("Librería Salesiana", "Librería Salesiana Huancayo", "pedidos@libreriasalesiana.com", "985 222 333", "Jr. Santa Rosa N° 299, Lima"),
     ("Artículos Religiosos Jerusalén", "Jerusalén Import", "ventas@religiososjerusalen.pe", "983 444 555", "Av. Abancay 456, Lima"),
 ]
 

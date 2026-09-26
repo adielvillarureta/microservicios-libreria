@@ -11,7 +11,7 @@ app = Flask(__name__)
 @app.route('/')
 def home():
     return (
-        "Proyecto Librería Salesiana Don Bosco\n"
+        "Proyecto Librería Salesiana Huancayo\n"
         "--------------------------------------\n"
         "Comercial (ventas) : http://localhost:5001\n"
         "Inventario         : http://localhost:5000\n"

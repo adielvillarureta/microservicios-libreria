@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block titulito %}Mi Panel - Vendedor{% endblock %}
+
+{% block contenido %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="fas fa-user-tie text-warning me-2"></i>Mi Panel
+            </h2>
+            <p class="text-secondary mb-0">
+                Bienvenido(a) {{ session.nombre }}, aquí está el estado del inventario.
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/productos" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-box-open me-1"></i>Productos
+            </a>
+            <a href="/ver_productos_proveedor" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-handshake me-1"></i>Por Proveedor
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm border-0 text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-boxes fa-2x text-primary mb-2"></i>
+                    <h3 class="fw-bold mb-0">{{ con_stock }}</h3>
+                    <small class="text-secondary">Productos en stock</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm border-0 text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                    <h3 class="fw-bold mb-0">{{ bajos|length }}</h3>
+                    <small class="text-secondary">Stock bajo</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm border-0 text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-box fa-2x text-danger mb-2"></i>
+                    <h3 class="fw-bold mb-0">{{ agotados|length }}</h3>
+                    <small class="text-secondary">Agotados</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm border-0 text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-arrows-rotate fa-2x text-success mb-2"></i>
+                    <h3 class="fw-bold mb-0">{{ movimientos|length }}</h3>
+                    <small class="text-secondary">Últimos movimientos</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>Stock bajo
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr><th>Producto</th><th class="text-center">Stock</th><th class="text-center">Mínimo</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for p in bajos %}
+                                <tr>
+                                    <td>{{ p.nombre }}</td>
+                                    <td class="text-center"><span class="badge bg-warning text-dark">{{ p.cantidad }}</span></td>
+                                    <td class="text-center">{{ p.stock_minimo }}</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="3" class="text-center text-secondary py-3">Sin productos con stock bajo</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-box text-danger me-2"></i>Agotados
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr><th>Producto</th><th class="text-center">Stock</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for p in agotados %}
+                                <tr>
+                                    <td>{{ p.nombre }}</td>
+                                    <td class="text-center"><span class="badge bg-danger">0</span></td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="2" class="text-center text-secondary py-3">Ningún producto agotado</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mt-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0 fw-bold">
+                <i class="fas fa-arrows-rotate text-success me-2"></i>Últimos movimientos de stock
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Producto</th>
+                            <th>Tipo</th>
+                            <th class="text-center">Cantidad</th>
+                            <th class="text-center">Stock resultante</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in movimientos %}
+                        <tr>
+                            <td>{{ m.fecha.strftime('%d/%m/%Y %H:%M') if m.fecha else '-' }}</td>
+                            <td>{{ m.producto.nombre if m.producto else '-' }}</td>
+                            <td>
+                                {% if m.tipo == 'ENTRADA' %}
+                                <span class="badge bg-success">{{ m.tipo }}</span>
+                                {% else %}
+                                <span class="badge bg-danger">{{ m.tipo }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">{{ m.cantidad }}</td>
+                            <td class="text-center">{{ m.stock_resultante }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center text-secondary py-3">Sin movimientos registrados</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -97,18 +97,21 @@ def create_app():
     from models.movimientoStock import MovimientoStock
     from models.inventarioDiario import InventarioDiario
     from models.usuarioSistema import UsuarioSistema
+    from models.bloqueo import Bloqueo
 
     from routes.producto import producto_bp
     from routes.proveedores import proveedores_bp
     from routes.bloqueos import bloqueos_bp
     from routes.usuario import usuario_bp
     from routes.kpi import kpi_bp
+    from routes.vendedores import vendedores_bp
 
     app.register_blueprint(producto_bp)
     app.register_blueprint(proveedores_bp)
     app.register_blueprint(bloqueos_bp)
     app.register_blueprint(usuario_bp)
     app.register_blueprint(kpi_bp)
+    app.register_blueprint(vendedores_bp)
 
     @app.route('/')
     def dashboard():
@@ -184,6 +187,16 @@ def create_app():
                 rol='administrador'
             )
             db.session.add(admin)
+            db.session.commit()
+        if not UsuarioSistema.query.filter_by(correo='vendedor@libreria.com').first():
+            vendedor = UsuarioSistema(
+                nombres='Juan Victor',
+                apellidos='Uchuypoma Lanazca',
+                correo='vendedor@libreria.com',
+                clave=generate_password_hash('vendedor123'),
+                rol='vendedor'
+            )
+            db.session.add(vendedor)
             db.session.commit()
 
     return app
