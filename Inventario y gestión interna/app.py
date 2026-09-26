@@ -115,94 +115,24 @@ def create_app():
         if 'usuario_id' not in session:
             return redirect(url_for('usuario.login'))
 
-<<<<<<< HEAD
         from sqlalchemy import func
-=======
-        from sqlalchemy import text
->>>>>>> 5ad8b1462d14b6d9c857368958458f71ad01c454
 
         total_productos = Producto.query.count()
         stock_bajo = Producto.query.filter(
             Producto.cantidad <= Producto.stock_minimo, Producto.cantidad > 0).all()
         stock_critico = Producto.query.filter(Producto.cantidad == 0).all()
-<<<<<<< HEAD
-        total_proveedores = Proveedor.query.count()
-        con_stock = Producto.query.filter(Producto.cantidad > 0).count()
-        valor_inventario = db.session.query(
-            func.coalesce(func.sum(Producto.precio * Producto.cantidad), 0)
-        ).scalar() or 0
-
-        top_productos = [
-            {"nombre": p.nombre, "imagen": p.imagen, "total_vendido": p.cantidad,
-             "valor": float(p.precio or 0) * (p.cantidad or 0)}
-            for p in sorted(
-                Producto.query.filter(Producto.cantidad > 0).all(),
-                key=lambda p: float(p.precio or 0) * (p.cantidad or 0),
-                reverse=True,
-            )[:8]
-        ]
-
-        por_categoria = db.session.query(
-            Categoria.nombre, func.count(Producto.id)
-        ).join(Producto, Producto.id_categoria == Categoria.id_categoria)\
-         .group_by(Categoria.nombre).all()
-        por_proveedor = db.session.query(
-            Proveedor.nombre, func.count(Producto.id)
-        ).join(Producto, Producto.proveedor_id == Proveedor.id)\
-         .group_by(Proveedor.nombre).all()
-
-        base_layout = {"template": "plotly_white", "margin": {"t": 40, "b": 40, "l": 50, "r": 20},
-                       "height": 300, "showlegend": False}
-        graph_ventas = {
-            "data": [{"type": "bar",
-                      "x": [c[0] for c in por_categoria],
-                      "y": [c[1] for c in por_categoria],
-                      "marker": {"color": "#1E3A8A"}}],
-            "layout": dict(base_layout, title="Productos por categoría"),
-        }
-        graph_cat = {
-            "data": [{"type": "pie", "labels": [c[0] for c in por_categoria],
-                      "values": [c[1] for c in por_categoria]}],
-            "layout": {"template": "plotly_white", "margin": {"t": 40, "b": 20, "l": 20, "r": 20},
-                       "height": 280, "title": "Distribución por categoría", "showlegend": True},
-        }
-        graph_top = {
-            "data": [{"type": "bar", "orientation": "h",
-                      "y": [p["nombre"][:22] for p in top_productos][::-1],
-                      "x": [p["valor"] for p in top_productos][::-1],
-                      "marker": {"color": "#D4AF37"}}],
-            "layout": dict(base_layout, title="Valor de inventario por producto (S/)", showlegend=False),
-        }
-        graph_estados = {
-            "data": [{"type": "pie", "labels": ["Con stock", "Stock bajo", "Agotados"],
-                      "values": [con_stock, len(stock_bajo), len(stock_critico)],
-                      "hole": 0.55}],
-            "layout": {"template": "plotly_white", "margin": {"t": 40, "b": 20, "l": 20, "r": 20},
-                       "height": 280, "title": "Estado del stock", "showlegend": True},
-        }
-
-        return render_template(
-            'dashboard.html',
-            valor_inventario=float(valor_inventario),
-            con_stock=con_stock,
-            stock_bajo_count=len(stock_bajo),
-            agotados_count=len(stock_critico),
-            pedidos_pendientes=len(stock_bajo),
-            pedidos_en_proceso=len(stock_critico),
-            total_clientes=total_proveedores,
-            clientes_nuevos=0,
-=======
         total_proveedores = Proveedor.query.filter_by(activo=True).count()
+        con_stock = Producto.query.filter(Producto.cantidad > 0).count()
 
         # --- datos reales de ventas, pedidos y clientes (vienen del Comercial) ---
         resumen = _resumen_desde_comercial()
 
-        valor_inventario = db.session.execute(text(
-            "SELECT COALESCE(SUM(precio * cantidad),0) FROM productos WHERE estado = 1"
-        )).scalar() or 0
-        valor_costo = db.session.execute(text(
-            "SELECT COALESCE(SUM(costo * cantidad),0) FROM productos WHERE estado = 1"
-        )).scalar() or 0
+        valor_inventario = db.session.query(
+            func.coalesce(func.sum(Producto.precio * Producto.cantidad), 0)
+        ).filter(Producto.estado.is_(True)).scalar() or 0
+        valor_costo = db.session.query(
+            func.coalesce(func.sum(Producto.costo * Producto.cantidad), 0)
+        ).filter(Producto.estado.is_(True)).scalar() or 0
 
         return render_template(
             'dashboard.html',
@@ -214,27 +144,21 @@ def create_app():
             pedidos_en_proceso=resumen['pedidos_proceso'],
             total_clientes=resumen['clientes'],
             clientes_nuevos=resumen['clientes_nuevos'],
->>>>>>> 5ad8b1462d14b6d9c857368958458f71ad01c454
             stock_bajo=stock_bajo,
             stock_critico=stock_critico,
             total_productos=total_productos,
             total_proveedores=total_proveedores,
-<<<<<<< HEAD
-            top_productos=top_productos,
-            graph_ventas=graph_ventas,
-            graph_top=graph_top,
-            graph_cat=graph_cat,
-            graph_estados=graph_estados,
-=======
             valor_inventario=round(float(valor_inventario), 2),
             valor_costo=round(float(valor_costo), 2),
+            con_stock=con_stock,
+            stock_bajo_count=len(stock_bajo),
+            agotados_count=len(stock_critico),
             top_productos=resumen['top_productos'],
             graph_ventas=resumen['graph_ventas'],
             graph_top=resumen['graph_top'],
             graph_cat=resumen['graph_cat'],
             graph_estados=resumen['graph_estados'],
             comercial_ok=resumen['comercial_ok'],
->>>>>>> 5ad8b1462d14b6d9c857368958458f71ad01c454
             ahora_peru=datetime.now()
         )
 
