@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, redirect, render_template, request, url_for
+﻿from flask import Blueprint, jsonify, redirect, render_template, request, url_for
 
 from extensions import db
 from models.categoria import Categoria
@@ -8,8 +8,9 @@ from models.proveedor import Proveedor
 producto_bp = Blueprint('producto', __name__)
 
 CAMPOS_EDITABLES = {
-    'nombre', 'descripcion', 'precio', 'precio_oferta', 'cantidad',
-    'codigo_barras', 'imagen', 'destacado', 'id_categoria', 'proveedor_id'
+    'nombre', 'descripcion', 'precio', 'precio_oferta', 'costo', 'cantidad',
+    'codigo_barras', 'sku', 'imagen', 'destacado', 'estado',
+    'stock_minimo', 'stock_maximo', 'id_categoria', 'proveedor_id'
 }
 
 
@@ -41,16 +42,19 @@ def nuevo_producto():
 
 
 @producto_bp.route('/productos', methods=['GET'])
+@producto_bp.route('/api/productos', methods=['GET'])
 def api_listar_productos():
     return jsonify([p.to_dict() for p in Producto.query.all()])
 
 
 @producto_bp.route('/productos/<int:id>', methods=['GET'])
+@producto_bp.route('/api/productos/<int:id>', methods=['GET'])
 def api_obtener_producto(id):
-    return jsonify(Producto.query.get_or_404(id).to_dict())
+    return jsonify(db.get_or_404(Producto, id).to_dict())
 
 
 @producto_bp.route('/productos', methods=['POST'])
+@producto_bp.route('/api/productos', methods=['POST'])
 def api_crear_producto():
     data = request.get_json(silent=True) or {}
     nuevo = Producto(**{k: v for k, v in data.items() if k in CAMPOS_EDITABLES})
@@ -60,8 +64,9 @@ def api_crear_producto():
 
 
 @producto_bp.route('/productos/<int:id>', methods=['PUT'])
+@producto_bp.route('/api/productos/<int:id>', methods=['PUT'])
 def api_actualizar_producto(id):
-    producto = Producto.query.get_or_404(id)
+    producto = db.get_or_404(Producto, id)
     data = request.get_json(silent=True) or {}
     for key, value in data.items():
         if key in CAMPOS_EDITABLES:
@@ -71,22 +76,25 @@ def api_actualizar_producto(id):
 
 
 @producto_bp.route('/productos/<int:id>', methods=['DELETE'])
+@producto_bp.route('/api/productos/<int:id>', methods=['DELETE'])
 def api_eliminar_producto(id):
-    producto = Producto.query.get_or_404(id)
+    producto = db.get_or_404(Producto, id)
     db.session.delete(producto)
     db.session.commit()
     return jsonify({'message': 'Producto eliminado'})
 
 
 @producto_bp.route('/productos/<int:id>/stock', methods=['GET'])
+@producto_bp.route('/api/productos/<int:id>/stock', methods=['GET'])
 def api_obtener_stock(id):
-    producto = Producto.query.get_or_404(id)
+    producto = db.get_or_404(Producto, id)
     return jsonify({'stock': producto.cantidad, 'nombre': producto.nombre})
 
 
 @producto_bp.route('/productos/<int:id>/stock', methods=['PUT'])
+@producto_bp.route('/api/productos/<int:id>/stock', methods=['PUT'])
 def api_actualizar_stock(id):
-    producto = Producto.query.get_or_404(id)
+    producto = db.get_or_404(Producto, id)
     data = request.get_json(silent=True) or {}
     producto.cantidad = data.get('cantidad', producto.cantidad)
     db.session.commit()

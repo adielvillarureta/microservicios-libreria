@@ -17,8 +17,8 @@ CORS(app)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-COMERCIAL_URL = os.getenv("COMERCIAL_URL", "http://localhost:5000")
-INVENTARIO_URL = os.getenv("INVENTARIO_URL", "http://localhost:5001")
+COMERCIAL_URL = os.getenv("COMERCIAL_URL", "http://localhost:5001")
+INVENTARIO_URL = os.getenv("INVENTARIO_URL", "http://localhost:5000")
 
 
 def proxy_request(method, service_url, path, public_prefix=""):
@@ -141,7 +141,12 @@ def proxy_inventario_api(path):
     return proxy_request(request.method, INVENTARIO_URL, path, public_prefix="/api/inventario")
 
 
+<<<<<<< HEAD
 @app.route("/inventario", defaults={"path": ""}, strict_slashes=False)
+=======
+@app.route("/inventario", defaults={"path": ""})
+@app.route("/inventario/", defaults={"path": ""})
+>>>>>>> 5ad8b1462d14b6d9c857368958458f71ad01c454
 @app.route("/inventario/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 def proxy_inventario(path):
     return proxy_request(request.method, INVENTARIO_URL, path, public_prefix="/inventario")

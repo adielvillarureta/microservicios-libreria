@@ -131,7 +131,7 @@ def ver_pedidos():
 
     if search:
         like = f"%{search}%"
-        filtros = [Cliente.nombres.like(like), Cliente.apellidos.like(like), Cliente.email.like(like)]
+        filtros = [Cliente.nombres.like(like), Cliente.apellidos.like(like), Cliente.correo.like(like)]
         if search.isdigit():
             filtros.append(Pedido.id == int(search))
         query = query.join(Cliente).filter(db.or_(*filtros))
@@ -161,14 +161,21 @@ def ver_pedidos():
         p.cliente_email = cliente.email if cliente else ''
         p.cliente_telefono = cliente.telefono if cliente else ''
 
-    lista = pedidos
-    total_pedidos = len(lista)
-    pedidos_pendientes = sum(1 for p in lista if p.estado == 'pendiente')
-    pedidos_en_proceso = sum(1 for p in lista if p.estado in ('confirmado', 'preparando', 'enviado', 'listo_tienda'))
-    pedidos_completados = sum(1 for p in lista if p.estado in ('entregado', 'recogido'))
+    total_pedidos = len(pedidos)
+    pedidos_pendientes = sum(1 for p in pedidos if p.estado == 'pendiente')
+    pedidos_en_proceso = sum(1 for p in pedidos if p.estado in ('confirmado', 'preparando', 'enviado', 'listo_tienda'))
+    pedidos_completados = sum(1 for p in pedidos if p.estado in ('entregado', 'recogido'))
+
+    # Paginacion: sin esto la pagina renderiza miles de filas (varios MB)
+    por_pagina = 50
+    pagina = max(1, request.args.get('pagina', 1, type=int))
+    total_paginas = max(1, (total_pedidos + por_pagina - 1) // por_pagina)
+    pagina = min(pagina, total_paginas)
+    inicio = (pagina - 1) * por_pagina
+    lista = pedidos[inicio:inicio + por_pagina]
 
     return render_template('pedidos.html',
-                           pedidos=pedidos,
+                           pedidos=lista,
                            estados=ESTADOS_PEDIDO,
                            search=search,
                            estado_filter=estado,
@@ -178,6 +185,9 @@ def ver_pedidos():
                            pedidos_pendientes=pedidos_pendientes,
                            pedidos_completados=pedidos_completados,
                            pedidos_en_proceso=pedidos_en_proceso,
+                           pagina=pagina,
+                           total_paginas=total_paginas,
+                           por_pagina=por_pagina,
                            es_admin=True)
 
 
@@ -306,7 +316,7 @@ def _componer_bloqueo(bloqueo):
     cliente = Cliente.query.filter(
         db.or_(
             Cliente.id == bloqueo.cliente_id if bloqueo.cliente_id else False,
-            Cliente.email == (bloqueo.email or '')
+            Cliente.correo == (bloqueo.email or '')
         )
     ).first() if bloqueo.cliente_id or bloqueo.email else None
     usuario = UsuarioSistema.query.filter_by(correo=bloqueo.email).first() if bloqueo.email else None

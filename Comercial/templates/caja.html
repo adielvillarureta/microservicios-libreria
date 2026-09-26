@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+{% block titulito %}Módulo de Caja - Librería Salesiana{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid px-2 px-md-4 pb-4">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <h2 class="fs-4 fw-bold mb-0"><i class="fas fa-vault me-2 text-primary"></i>Módulo de Caja</h2>
+            <p class="text-muted small mb-0">
+                <i class="fas fa-info-circle me-1"></i>
+                Alimenta el <strong>KPI 7 · Precisión en el cierre de caja</strong>
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/kpis" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-chart-line me-1"></i> Tablero de KPIs
+            </a>
+        </div>
+    </div>
+
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+        {% if msgs %}
+            {% for cat, msg in msgs %}
+            <div class="alert alert-{{ cat }} alert-dismissible fade show">
+                {{ msg }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if caja_abierta %}
+    <!-- ================= CAJA ABIERTA ================= -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-4">
+            <div class="card border-success shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <i class="fas fa-lock-open me-2"></i>Caja abierta
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0 small">
+                        <dt class="col-5 text-muted">Fondo inicial</dt>
+                        <dd class="col-7 text-end fw-bold">S/ {{ '%.2f'|format(caja_abierta.monto_inicial|float) }}</dd>
+                        <dt class="col-5 text-muted">Ventas en efectivo</dt>
+                        <dd class="col-7 text-end fw-bold text-success">
+                            S/ {{ '%.2f'|format(total_ventas_efectivo|float) }}
+                        </dd>
+                        <dt class="col-5 text-muted">Apertura</dt>
+                        <dd class="col-7 text-end">{{ caja_abierta.fecha_apertura.strftime('%d/%m/%Y %H:%M') }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-primary shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-arrow-right-arrow-left me-2"></i>Movimiento
+                </div>
+                <div class="card-body">
+                    <form id="formMovimiento" class="vstack gap-2">
+                        <select class="form-select form-select-sm" id="tipoMov" required>
+                            <option value="EGRESO">Egreso (retiro de dinero)</option>
+                            <option value="INGRESO">Ingreso extra</option>
+                        </select>
+                        <input type="number" step="0.01" min="0.01" class="form-control form-control-sm"
+                               id="montoMov" placeholder="Monto (S/)" required>
+                        <input type="text" class="form-control form-control-sm"
+                               id="conceptoMov" placeholder="Concepto" required>
+                        <button class="btn btn-sm btn-outline-primary" type="submit">
+                            <i class="fas fa-plus me-1"></i>Registrar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-warning shadow-sm h-100">
+                <div class="card-header bg-warning text-dark">
+                    <i class="fas fa-calculator me-2"></i>Cerrar y arquear
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-light border py-2 px-3 small">
+                        <div class="d-flex justify-content-between">
+                            <span>Monto esperado</span>
+                            <strong>S/ {{ '%.2f'|format(monto_esperado|float) }}</strong>
+                        </div>
+                    </div>
+                    <form id="formCerrar" class="vstack gap-2">
+                        <input type="number" step="0.01" min="0" class="form-control form-control-sm"
+                               id="montoReal" placeholder="Monto real contado (S/)" required>
+                        <input type="text" class="form-control form-control-sm"
+                               id="obsCerrar" placeholder="Observación (opcional)">
+                        <button class="btn btn-sm btn-warning fw-bold" type="submit">
+                            <i class="fas fa-lock me-1"></i>Cerrar caja
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white"><h6 class="mb-0"><i class="fas fa-list me-2"></i>Movimientos del turno</h6></div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+                <table class="table table-sm table-hover mb-0 align-middle">
+                    <thead class="table-light sticky-top">
+                        <tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th class="text-end">Monto</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for m in movimientos %}
+                        <tr>
+                            <td class="small">{{ m.creado_en.strftime('%d/%m %H:%M') }}</td>
+                            <td>
+                                <span class="badge rounded-pill {{ 'badge-ok border' if m.tipo in ['INGRESO','CIERRE'] else 'badge-bad border' }}">
+                                    {{ m.tipo }}
+                                </span>
+                            </td>
+                            <td class="small">{{ m.concepto }}</td>
+                            <td class="text-end fw-bold">S/ {{ '%.2f'|format(m.monto|float) }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4" class="text-center text-muted py-3">Sin movimientos</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- ================= CAJA CERRADA ================= -->
+    <div class="card border-success shadow-sm mb-4">
+        <div class="card-body text-center py-4">
+            <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+            <h5 class="mb-1">No tienes una caja abierta</h5>
+            <p class="text-muted small mb-3">Abre tu turno para poder registrar ventas en efectivo y cerrar con arqueo.</p>
+            <form id="formAbrir" class="d-flex justify-content-center gap-2 flex-wrap">
+                <input type="number" step="0.01" min="0" value="200" class="form-control form-control-sm"
+                       id="montoInicial" style="max-width:200px" placeholder="Fondo inicial (S/)" required>
+                <button class="btn btn-sm btn-success" type="submit">
+                    <i class="fas fa-lock-open me-1"></i>Abrir caja
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ================= HISTORIAL ================= -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h6 class="mb-0"><i class="fas fa-history me-2"></i>Historial de cierres</h6>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th><th>Apertura</th><th>Cierre</th>
+                        <th class="text-end">Inicial</th><th class="text-end">Esperado</th>
+                        <th class="text-end">Real</th><th class="text-end">Diferencia</th><th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for c in historial %}
+                    <tr>
+                        <td class="small">{{ c.id }}</td>
+                        <td class="small">{{ c.fecha_apertura.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td class="small">
+                            {{ c.fecha_cierre.strftime('%d/%m/%Y %H:%M') if c.fecha_cierre else '—' }}
+                        </td>
+                        <td class="text-end small">S/ {{ '%.2f'|format(c.monto_inicial|float) }}</td>
+                        <td class="text-end small">S/ {{ '%.2f'|format(c.monto_esperado|float) if c.monto_esperado else '—' }}</td>
+                        <td class="text-end small">S/ {{ '%.2f'|format(c.monto_real|float) if c.monto_real else '—' }}</td>
+                        <td class="text-end small fw-bold {{ 'text-success' if c.diferencia is not none and c.diferencia == 0 else 'text-danger' }}">
+                            {% if c.diferencia is not none %}S/ {{ '%.2f'|format(c.diferencia|float) }}{% else %}—{% endif %}
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill {{ 'badge-ok border' if c.estado == 'cerrada' else 'badge-warn border' }}">
+                                {{ c.estado|title }}
+                            </span>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="8" class="text-center text-muted py-4">Todavía no hay cierres registrados</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function avisar(mensaje, tipo) {
+    const div = document.createElement('div');
+    div.className = 'alert alert-' + (tipo || 'success') + ' alert-dismissible fade show';
+    div.innerHTML = mensaje +
+        ' <button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+    document.querySelector('.container-fluid').prepend(div);
+    setTimeout(() => div.remove(), 5000);
+}
+
+const formAbrir = document.getElementById('formAbrir');
+if (formAbrir) {
+    formAbrir.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const fd = new FormData();
+        fd.append('monto_inicial', document.getElementById('montoInicial').value);
+        fetch('/caja/abrir', {method: 'POST', body: fd})
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) location.reload();
+                else avisar(d.error, 'danger');
+            });
+    });
+}
+
+const formMov = document.getElementById('formMovimiento');
+if (formMov) {
+    formMov.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const fd = new FormData();
+        fd.append('tipo', document.getElementById('tipoMov').value);
+        fd.append('monto', document.getElementById('montoMov').value);
+        fd.append('concepto', document.getElementById('conceptoMov').value);
+        fetch('/caja/movimiento', {method: 'POST', body: fd})
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    avisar('Movimiento registrado: ' + d.tipo + ' S/ ' + d.monto.toFixed(2), 'success');
+                    formMov.reset();
+                    setTimeout(() => location.reload(), 900);
+                } else avisar(d.error, 'danger');
+            });
+    });
+}
+
+const formCerrar = document.getElementById('formCerrar');
+if (formCerrar) {
+    formCerrar.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const fd = new FormData();
+        fd.append('monto_real', document.getElementById('montoReal').value);
+        fd.append('observaciones', document.getElementById('obsCerrar').value);
+        fetch('/caja/cerrar', {method: 'POST', body: fd})
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    avisar(
+                        'Caja cerrada. Esperado S/ ' + d.monto_esperado.toFixed(2) +
+                        ' · Real S/ ' + d.monto_real.toFixed(2) +
+                        ' · Diferencia S/ ' + d.diferencia.toFixed(2),
+                        d.cuadra ? 'success' : 'warning');
+                    setTimeout(() => location.reload(), 2200);
+                } else avisar(d.error, 'danger');
+            });
+    });
+}
+</script>
+{% endblock %}

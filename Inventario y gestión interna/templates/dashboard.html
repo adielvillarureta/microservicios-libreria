@@ -72,13 +72,71 @@
     <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 mb-4">
         <h2 class="fs-4 fs-md-3 mb-0"><i class="fas fa-chart-line me-2 text-primary"></i>Panel de Control</h2>
         <div class="d-flex flex-wrap justify-content-center gap-2">
-            <a href="/productos" class="btn btn-primary btn-sm btn-md-normal">
+            <a href="/kpis" class="btn btn-primary btn-sm btn-md-normal">
+                <i class="fas fa-chart-line me-2"></i>Tablero de KPIs
+            </a>
+            <a href="/productos" class="btn btn-outline-primary btn-sm btn-md-normal">
                 <i class="fas fa-box me-2"></i>Ver Productos
             </a>
-            <span class="text-muted small">{{ ahora_peru.strftime('%d/%m/%Y %H:%M') }}</span>
+            <span class="text-muted small align-self-center">{{ ahora_peru.strftime('%d/%m/%Y %H:%M') }}</span>
         </div>
     </div>
-    
+
+    {% if not comercial_ok %}
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div class="small">
+            <strong>Microservicio Comercial no disponible.</strong>
+            Las ventas, pedidos y clientes se muestran en cero porque esos datos viven en
+            <code>comercial_db</code>, que es propiedad del microservicio Comercial.
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Valor del inventario -->
+    <div class="row g-2 g-md-3 mb-4">
+        <div class="col-12 col-sm-6 col-md-3 mb-2 mb-md-0">
+            <div class="card border-secondary shadow-sm h-100">
+                <div class="card-body p-2 p-md-3">
+                    <h6 class="text-muted mb-1 small">Valor de inventario (precio)</h6>
+                    <h3 class="mb-0 fs-5 fs-md-4">S/ {{ "%.2f"|format(valor_inventario|float) }}</h3>
+                    <small class="text-muted d-block">Costo: S/ {{ "%.2f"|format(valor_costo|float) }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3 mb-2 mb-md-0">
+            <div class="card border-dark shadow-sm h-100">
+                <div class="card-body p-2 p-md-3">
+                    <h6 class="text-muted mb-1 small">Proveedores</h6>
+                    <h3 class="mb-0 fs-5 fs-md-4">{{ total_proveedores }}</h3>
+                    <small class="text-muted d-block">Distribuidores activos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3 mb-2 mb-md-0">
+            <div class="card border-primary shadow-sm h-100">
+                <div class="card-body p-2 p-md-3">
+                    <h6 class="text-muted mb-1 small">Productos activos</h6>
+                    <h3 class="mb-0 text-primary fs-5 fs-md-4">{{ total_productos }}</h3>
+                    <small class="text-muted d-block">
+                        <a href="/kpis">Ver KPIs de inventario →</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3 mb-2 mb-md-0">
+            <div class="card border-warning shadow-sm h-100">
+                <div class="card-body p-2 p-md-3">
+                    <h6 class="text-muted mb-1 small">Requieren atención</h6>
+                    <h3 class="mb-0 text-warning fs-5 fs-md-4">{{ stock_bajo|length + stock_critico|length }}</h3>
+                    <small class="text-muted d-block">
+                        {{ stock_critico|length }} agotados · {{ stock_bajo|length }} con stock bajo
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Estadísticas -->
     <div class="row g-2 g-md-3 mb-4">
         <div class="col-12 col-sm-6 col-md-3 mb-2 mb-md-0">

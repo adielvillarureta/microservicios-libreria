@@ -12,7 +12,7 @@
                 <i class="fas fa-chart-bar me-3 text-warning"></i>
                 Ventas por Vendedor
               </h1>
-              <p class="h5 mb-0 opacity-90">{{ ventas|length }} registros encontrados</p>
+              <p class="h5 mb-0 opacity-90">{{ ventas|length }} de {{ total_ventas }} registros</p>
             </div>
             <div class="d-flex gap-2">
               <a href="/ventas/nueva" class="btn btn-success btn-lg shadow hover-lift">
@@ -153,12 +153,45 @@
           </table>
         </div>
 
+        {# ---------- Paginacion ---------- #}
+        {% if total_paginas and total_paginas > 1 %}
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3 px-1">
+            <small class="text-muted">
+                Página <strong>{{ pagina }}</strong> de <strong>{{ total_paginas }}</strong>
+            </small>
+            <nav aria-label="Páginas de ventas">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item {{ 'disabled' if pagina <= 1 }}">
+                        <a class="page-link"
+                           href="{{ url_for('ventas.listar_ventas', pagina=pagina - 1, vendedor_id=vendedor_id_actual) }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% set ini = [1, pagina - 2]|max %}
+                    {% set fin = [total_paginas, pagina + 2]|min %}
+                    {% for n in range(ini, fin + 1) %}
+                    <li class="page-item {{ 'active' if n == pagina }}">
+                        <a class="page-link"
+                           href="{{ url_for('ventas.listar_ventas', pagina=n, vendedor_id=vendedor_id_actual) }}">{{ n }}</a>
+                    </li>
+                    {% endfor %}
+                    <li class="page-item {{ 'disabled' if pagina >= total_paginas }}">
+                        <a class="page-link"
+                           href="{{ url_for('ventas.listar_ventas', pagina=pagina + 1, vendedor_id=vendedor_id_actual) }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
         {% if rol_usuario != 'vendedor' %}
         <div class="card-footer bg-dark text-white p-4 border-0">
           <div class="row g-4 align-items-center text-center text-md-start">
             <div class="col-md-3 text-center border-end-md">
               <h6 class="text-uppercase fs-7 mb-1 text-muted fw-bold">Total Ventas</h6>
-              <div class="h3 text-warning mb-0 fw-extrabold">{{ ventas|length }}</div>
+              <div class="h3 text-warning mb-0 fw-extrabold">{{ total_ventas }}</div>
             </div>
             <div class="col-md-3 text-center border-end-md">
               <h6 class="text-uppercase fs-7 mb-1 text-muted fw-bold">Total Unidades</h6>

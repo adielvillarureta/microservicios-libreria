@@ -11,7 +11,7 @@ from sqlalchemy import text
 from extensions import db
 from models.intentos_login import IntentosLogin
 
-_inventario_url = os.getenv('INVENTARIO_API_URL') or os.getenv('INVENTARIO_URL', 'http://localhost:5001')
+_inventario_url = os.getenv('INVENTARIO_API_URL') or os.getenv('INVENTARIO_URL', 'http://localhost:5000')
 _categorias_cache = {'tiempo': 0, 'data': []}
 
 

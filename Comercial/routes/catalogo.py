@@ -5,7 +5,7 @@ from flask import Blueprint, jsonify, render_template, request
 
 catalogo_bp = Blueprint('catalogo', __name__)
 
-INVENTARIO_URL = os.getenv('INVENTARIO_API_URL') or os.getenv('INVENTARIO_URL', 'http://localhost:5001')
+INVENTARIO_URL = os.getenv('INVENTARIO_API_URL') or os.getenv('INVENTARIO_URL', 'http://localhost:5000')
 
 
 @catalogo_bp.route("/catalogo")

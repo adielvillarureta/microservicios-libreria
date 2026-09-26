@@ -1,0 +1,922 @@
+{% extends 'base.html' %}
+{% block titulito %}📊 Indicadores Estratégicos (KPIs) - Librería Salesiana{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/kpi.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid px-2 px-md-4 pb-5">
+
+    <!-- ======================= HERO / PORTADA ======================= -->
+    <div class="kpi-hero mb-4">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">
+            <div>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="chip"><i class="fas fa-graduation-cap"></i> Inteligencia de Negocios</span>
+                    <span class="chip"><i class="fas fa-book-open"></i> Librería Salesiana Don Bosco</span>
+                    <span class="chip"><i class="fas fa-map-marker-alt"></i> Huancayo – Perú</span>
+                </div>
+                <h1>Tablero de Indicadores Estratégicos del Negocio</h1>
+                <p class="sub mb-0">
+                    Nueve indicadores clave (KPIs) calculados en tiempo real sobre la
+                    <strong>base de datos real del sistema</strong>, combinando el microservicio de
+                    Inventario y el microservicio Comercial. Cada tarjeta muestra el valor obtenido,
+                    la fórmula aplicada, la meta sugerida y si se cumple.
+                </p>
+            </div>
+
+            <div class="kpi-score">
+                <div class="ring" id="anilloSemforo"
+                     style="background:conic-gradient(#10b981 0deg 0deg,rgba(255,255,255,.18) 0deg)">
+                    <span id="pctSemforo">–</span>
+                </div>
+                <div>
+                    <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;opacity:.75">
+                        KPIs en meta
+                    </div>
+                    <div style="font-size:1.35rem;font-weight:800;line-height:1.1">
+                        <span id="kpisOk">0</span> / 9
+                    </div>
+                    <div style="font-size:.7rem;opacity:.75" id="txtSemforo">Calculando…</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mt-3 no-print">
+            <a href="/portada" class="btn btn-sm btn-light">
+                <i class="fas fa-file-alt me-1"></i> Ver Portada del Proyecto
+            </a>
+            <button class="btn btn-sm btn-light" onclick="window.print()">
+                <i class="fas fa-print me-1"></i> Imprimir / PDF
+            </button>
+            <button class="btn btn-sm btn-outline-light" id="btnRefrescar">
+                <i class="fas fa-sync-alt me-1"></i> Actualizar datos
+            </button>
+            <span class="chip align-self-center ms-auto">
+                <i class="fas fa-database"></i> comercial_db + inventario_db
+            </span>
+        </div>
+    </div>
+
+    {% if not comercial_ok %}
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div>
+            <strong>Microservicio Comercial no disponible.</strong>
+            Se muestran solo los KPIs de Inventario (5 y 6). Los KPIs de ventas se activan
+            cuando el servicio Comercial esté levantado.
+        </div>
+    </div>
+    {% endif %}
+
+    {% macro kpi(num, icono, color, nombre, valor, unidad, meta_txt, pct, estado,
+                 fuente, pct_texto='100%') %}
+    {% set estados = {'ok': ('badge-ok', 'fa-check-circle', 'Cumple la meta'),
+                      'warn': ('badge-warn', 'fa-exclamation-circle', 'Cerca de la meta'),
+                      'bad': ('badge-bad', 'fa-times-circle', 'No cumple la meta'),
+                      'info': ('badge-info', 'fa-info-circle', 'Informativo')} %}
+    {% set cls, ico, txt = estados.get(estado, estados['info']) %}
+    <div class="col-12 col-sm-6 col-lg-4 col-xxl-3 mb-3">
+        <div class="kpi-card" data-kpi="{{ num }}">
+            <div class="kpi-card__top">
+                <div class="kpi-card__num" style="background:{{ color }}">{{ num }}</div>
+                <h3 class="kpi-card__name">{{ nombre }}</h3>
+                <div class="kpi-card__icon"
+                     style="background:{{ color }}1a;color:{{ color }}"><i class="fas {{ icono }}"></i></div>
+            </div>
+
+            <div class="kpi-card__value" data-valor="{{ valor }}">
+                {{ valor if valor is not none else '—' }}<small>{{ unidad }}</small>
+            </div>
+
+            <div class="kpi-bar"><span style="width:{{ pct }}%;background:{{ color }}"></span></div>
+
+            <div class="kpi-card__meta">
+                <i class="fas fa-bullseye"></i> Meta: {{ meta_txt }}
+            </div>
+
+            <div class="kpi-card__foot">
+                <span class="badge {{ cls }} border rounded-pill">
+                    <i class="fas {{ ico }} me-1"></i>{{ txt }}
+                </span>
+                <span class="text-truncate" title="{{ fuente }}" style="max-width:58%">
+                    <i class="fas fa-link me-1"></i>{{ fuente }}
+                </span>
+            </div>
+        </div>
+    </div>
+    {% endmacro %}
+
+    {% set k1 = comercial.kpi_1_crecimiento_ventas if comercial else None %}
+    {% set k2 = comercial.kpi_2_ticket_promedio if comercial else None %}
+    {% set k3 = comercial.kpi_3_margen_real if comercial else None %}
+    {% set k4 = comercial.kpi_4_conversion_pedidos if comercial else None %}
+    {% set k7 = comercial.kpi_7_precision_caja if comercial else None %}
+    {% set k8 = comercial.kpi_8_crecimiento_clientes if comercial else None %}
+    {% set k9 = comercial.kpi_9_tiempo_atencion if comercial else None %}
+
+    <!-- ======================= 9 TARJETAS ======================= -->
+    <div class="row" id="rejillaKpis">
+
+        {{ kpi(1, 'fa-chart-line', '#1e3a8a', 'Crecimiento de ventas mensual',
+               ('{:+.2f}'.format(k1.valor) if k1 and k1.valor is not none else None), '%',
+               '≥ 10% mensual', ([k1.valor|abs, 20]|max / 20 * 100) if k1 and k1.valor is not none else 0,
+               ('ok' if k1 and k1.cumple_meta else 'warn') if k1 and k1.valor is not none else 'info',
+               'Sistema de Ventas') }}
+
+        {{ kpi(2, 'fa-receipt', '#0d9488', 'Ticket promedio por cliente',
+               ('S/ {:,.2f}'.format(k2.valor) if k2 and k2.valor is not none else None), '',
+               '+15% vs. histórico', ([k2.variacion_pct|abs, 30]|max / 30 * 100) if k2 and k2.variacion_pct is not none else 0,
+               ('ok' if k2 and k2.cumple_meta else 'warn') if k2 else 'info',
+               'Sistema de Ventas') }}
+
+        {{ kpi(3, 'fa-money-bill-trend-up', '#16a34a', 'Margen de ganancia real',
+               ('{:,.2f}'.format(k3.valor) if k3 and k3.valor is not none else None), '%',
+               '≥ 30% en productos clave', (k3.valor / 40 * 100) if k3 and k3.valor else 0,
+               ('ok' if k3 and k3.cumple_meta else 'warn') if k3 else 'info',
+               'Ventas + Inventario (costo)') }}
+
+        {{ kpi(4, 'fa-shopping-cart', '#7c3aed', 'Tasa de conversión pedido → venta',
+               ('{:,.2f}'.format(k4.valor) if k4 and k4.valor is not none else None), '%',
+               '≥ 85%', (k4.valor if k4 else 0),
+               ('ok' if k4 and k4.cumple_meta else 'warn') if k4 else 'info',
+               'Sistema de Ventas') }}
+
+        {{ kpi(5, 'fa-box-open', '#dc2626', 'Ventas perdidas por falta de stock',
+               ('{:,.2f}'.format(inv_stock.valor) if inv_stock and inv_stock.valor is not none else None), '%',
+               'Reducir 85% vs. manual', (inv_stock.reduccion_vs_manual if inv_stock else 0),
+               ('ok' if inv_stock and inv_stock.cumple_meta else ('warn' if inv_stock else 'info')),
+               'Sistema de Inventario') }}
+
+        {{ kpi(6, 'fa-sync-alt', '#ea580c', 'Rotación de inventario',
+               ('{:,.2f}'.format(inv_rotacion.valor) if inv_rotacion and inv_rotacion.valor is not none else None), 'x',
+               '≥ 1.20 en temporada', ((inv_rotacion.valor / 2 * 100) if inv_rotacion and inv_rotacion.valor else 0),
+               ('ok' if inv_rotacion and inv_rotacion.cumple_meta else 'warn') if inv_rotacion else 'info',
+               'Ventas + Inventario') }}
+
+        {{ kpi(7, 'fa-vault', '#0891b2', 'Precisión en el cierre de caja',
+               ('{:,.2f}'.format(k7.valor) if k7 and k7.valor is not none else None), '%',
+               '≥ 99%', (k7.valor if k7 else 0),
+               ('ok' if k7 and k7.cumple_meta else 'warn') if k7 else 'info',
+               'Módulo de Caja') }}
+
+        {{ kpi(8, 'fa-user-plus', '#4f46e5', 'Crecimiento de la base de clientes',
+               (k8.nuevos_mes if k8 else None), ' nuevos',
+               '≥ 0% sostenido', ([k8.tendencia_pct|abs, 100]|max if k8 and k8.tendencia_pct is not none else 0),
+               ('ok' if k8 and k8.cumple_meta else 'warn') if k8 else 'info',
+               'Registro de clientes') }}
+
+        {{ kpi(9, 'fa-stopwatch', '#b45309', 'Tiempo de atención al cliente',
+               ('{:,.2f}'.format(k9.valor) if k9 and k9.valor is not none else None), ' min',
+               'Menor que 18 min (sin sistema)',
+               (100 - (k9.valor / 18 * 100)) if k9 and k9.valor is not none else 0,
+               ('ok' if k9 and k9.cumple_meta else 'warn') if k9 else 'info',
+               'Notificaciones y ventas') }}
+
+    </div>
+
+    <!-- ======================= DETALLE POR KPI ======================= -->
+    <ul class="nav nav-pills gap-2 mb-3 no-print" id="tabsKpi" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill"
+                data-bs-target="#p-1" type="button">1 · Crecimiento</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill"
+                data-bs-target="#p-2" type="button">2 · Ticket</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill"
+                data-bs-target="#p-3" type="button">3 · Margen</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill"
+                data-bs-target="#p-4" type="button">4 · Conversión</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill"
+                data-bs-target="#p-5" type="button">5 · Stock agotado</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill"
+                data-bs-target="#p-6" type="button">6 · Rotación</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill"
+                data-bs-target="#p-7" type="button">7 · Caja</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill"
+                data-bs-target="#p-8" type="button">8 · Clientes</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill"
+                data-bs-target="#p-9" type="button">9 · Atención</button></li>
+    </ul>
+
+    <div class="tab-content">
+
+        <!-- ---------- KPI 1 ---------- -->
+        <div class="tab-pane fade show active" id="p-1">
+            <div class="kpi-detail">
+                <div class="kpi-detail__head">
+                    <span class="kpi-card__num" style="background:#1e3a8a">1</span>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Crecimiento de ventas mensual</h5>
+                        <small class="text-muted">Muestra si el negocio crece mes a mes</small>
+                    </div>
+                </div>
+                <div class="kpi-detail__body">
+                    <div class="formula mb-3">
+                        ((Ventas del mes actual − Ventas del mes anterior) / Ventas del mes anterior) × 100
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-8">
+                            <div id="g1" class="chart"></div>
+                        </div>
+                        <div class="col-12 col-lg-4">
+                            <div class="row g-2 mb-3">
+                                <div class="col-6"><div class="mini-stat">
+                                    <b>{{ '{:,.2f}'.format(k1.mes_actual.total) if k1 and k1.mes_actual else '—' }}</b>
+                                    <span>Mes actual (S/)</span></div></div>
+                                <div class="col-6"><div class="mini-stat">
+                                    <b>{{ '{:,.2f}'.format(k1.mes_anterior.total) if k1 and k1.mes_anterior else '—' }}</b>
+                                    <span>Mes anterior (S/)</span></div></div>
+                            </div>
+                            <div class="formula mb-2">META SUGERIDA: crecimiento sostenido ≥ 10% mensual en temporada escolar</div>
+                            {% if k1 %}
+                            <div class="alert {{ 'alert-success' if k1.cumple_meta else 'alert-warning' }} py-2 px-3 mb-0 small">
+                                {% if k1.cumple_meta %}
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    El crecimiento de <strong>{{ '{:+.2f}'.format(k1.valor) }}%</strong> cumple la meta estacional.
+                                {% else %}
+                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                    Crecimiento de <strong>{{ '{:+.2f}'.format(k1.valor) }}%</strong>.
+                                    Falta crecer {{ '{:.2f}'.format(10 - k1.valor) }} puntos para la meta.
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ---------- KPI 2 ---------- -->
+        <div class="tab-pane fade" id="p-2">
+            <div class="kpi-detail">
+                <div class="kpi-detail__head">
+                    <span class="kpi-card__num" style="background:#0d9488">2</span>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Ticket promedio por cliente</h5>
+                        <small class="text-muted">Cuánto gasta en promedio cada cliente por compra</small>
+                    </div>
+                </div>
+                <div class="kpi-detail__body">
+                    <div class="formula mb-3">Total vendido en el periodo / Número de ventas del mismo periodo</div>
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-8"><div id="g2" class="chart"></div></div>
+                        <div class="col-12 col-lg-4">
+                            <div class="row g-2 mb-3">
+                                <div class="col-6"><div class="mini-stat">
+                                    <b>S/ {{ '{:,.2f}'.format(k2.valor) if k2 else '—' }}</b>
+                                    <span>Ticket mes actual</span></div></div>
+                                <div class="col-6"><div class="mini-stat">
+                                    <b>S/ {{ '{:,.2f}'.format(k2.ticket_base) if k2 else '—' }}</b>
+                                    <span>Base antes del sistema</span></div></div>
+                                <div class="col-6"><div class="mini-stat">
+                                    <b>{{ k2.n_ventas_mes if k2 else '—' }}</b><span>Ventas del mes</span></div></div>
+                                <div class="col-6"><div class="mini-stat">
+                                    <b>{{ '{:+.2f}'.format(k2.variacion_pct) if k2 else '—' }}%</b>
+                                    <span>vs. línea base</span></div></div>
+                            </div>
+                            <div class="formula mb-2">
+                                META: aumento del 15% respecto al promedio antes del sistema
+                            </div>
+                            {% if k2 %}
+                            <p class="small text-muted mb-0">
+                                La línea base es el ticket promedio de
+                                <strong>{{ k2.base_mes }}</strong>, el primer mes de operación,
+                            tomado como periodo de control. La variación mes a mes
+                                (respecto a {{ '{:,.2f}'.format(k2.ticket_anterior) }}) es
+                                {{ '{:+.2f}'.format(k2.variacion_mom) }}%.
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ---------- KPI 3 ---------- -->
+        <div class="tab-pane fade" id="p-3">
+            <div class="kpi-detail">
+                <div class="kpi-detail__head">
+                    <span class="kpi-card__num" style="background:#16a34a">3</span>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Margen de ganancia real</h5>
+                        <small class="text-muted">Cuánto gana el negocio después de los costos</small>
+                    </div>
+                </div>
+                <div class="kpi-detail__body">
+                    <div class="formula mb-3">
+                        ((Total vendido − Costo de productos vendidos) / Total vendido) × 100
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>S/ {{ '{:,.2f}'.format(k3.ventas_totales) if k3 else '—' }}</b>
+                            <span>Total vendido</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>S/ {{ '{:,.2f}'.format(k3.costo_total) if k3 else '—' }}</b>
+                            <span>Costo productos</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>S/ {{ '{:,.2f}'.format(k3.utilidad) if k3 else '—' }}</b>
+                            <span>Utilidad real</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>{{ '{:,.2f}'.format(k3.valor) if k3 else '—' }}%</b>
+                            <span>Margen real</span></div></div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-7"><div id="g3" class="chart"></div></div>
+                        <div class="col-12 col-lg-5">
+                            <h6 class="fw-bold small text-uppercase text-muted mb-2">
+                                <i class="fas fa-ranking-star me-1"></i> Productos más rentables</h6>
+                            <div class="scroll-y">
+                                <table class="kpi-table">
+                                    <thead><tr><th>Producto</th><th class="text-end">Ingresos</th>
+                                        <th class="text-end">Utilidad</th><th class="text-end">Margen</th></tr></thead>
+                                    <tbody>
+                                    {% for p in k3.top_productos if k3 %}
+                                        <tr>
+                                            <td>{{ p.producto[:30] }}</td>
+                                            <td class="text-end">S/ {{ '{:,.2f}'.format(p.ingresos) }}</td>
+                                            <td class="text-end text-success">S/ {{ '{:,.2f}'.format(p.utilidad) }}</td>
+                                            <td class="text-end"><span class="badge badge-ok border">{{ p.margen }}%</span></td>
+                                        </tr>
+                                    {% else %}
+                                        <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ---------- KPI 4 ---------- -->
+        <div class="tab-pane fade" id="p-4">
+            <div class="kpi-detail">
+                <div class="kpi-detail__head">
+                    <span class="kpi-card__num" style="background:#7c3aed">4</span>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Tasa de conversión de pedido a venta</h5>
+                        <small class="text-muted">Qué tan efectivo es el proceso de compra</small>
+                    </div>
+                </div>
+                <div class="kpi-detail__body">
+                    <div class="formula mb-3">(Pedidos convertidos en venta / Número total de pedidos) × 100</div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>{{ k4.total_pedidos if k4 else '—' }}</b><span>Pedidos totales</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b class="text-success">{{ k4.convertidos if k4 else '—' }}</b>
+                            <span>Convertidos</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b class="text-danger">{{ k4.cancelados if k4 else '—' }}</b>
+                            <span>Cancelados</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>{{ '{:,.2f}'.format(k4.valor) if k4 else '—' }}%</b>
+                            <span>Tasa conversión</span></div></div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-7"><div id="g4" class="chart"></div></div>
+                        <div class="col-12 col-lg-5">
+                            <h6 class="fw-bold small text-uppercase text-muted mb-2">
+                                <i class="fas fa-credit-card me-1"></i> Pedidos convertidos por medio de pago</h6>
+                            <div class="scroll-y">
+                                <table class="kpi-table">
+                                    <thead><tr><th>Medio de pago</th><th class="text-end">Pedidos</th>
+                                        <th class="text-end">Monto</th></tr></thead>
+                                    <tbody>
+                                    {% for m in k4.por_metodo_pago if k4 %}
+                                        <tr>
+                                            <td>{{ m.metodo|title }}</td>
+                                            <td class="text-end">{{ m.pedidos }}</td>
+                                            <td class="text-end">S/ {{ '{:,.2f}'.format(m.monto) }}</td>
+                                        </tr>
+                                    {% else %}
+                                        <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ---------- KPI 5 ---------- -->
+        <div class="tab-pane fade" id="p-5">
+            <div class="kpi-detail">
+                <div class="kpi-detail__head">
+                    <span class="kpi-card__num" style="background:#dc2626">5</span>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Reducción de ventas perdidas por falta de stock</h5>
+                        <small class="text-muted">Cada producto agotado es una venta que se pierde</small>
+                    </div>
+                </div>
+                <div class="kpi-detail__body">
+                    <div class="formula mb-3">
+                        (Productos agotados en el periodo / Total de productos activos) × 100
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>{{ inv_stock.productos_activos if inv_stock else '—' }}</b>
+                            <span>Productos activos</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b class="text-danger">{{ inv_stock.productos_agotados if inv_stock else '—' }}</b>
+                            <span>Agotados</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b class="text-warning">{{ inv_stock.productos_stock_bajo if inv_stock else '—' }}</b>
+                            <span>Stock bajo</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b class="text-success">{{ '{:,.1f}'.format(inv_stock.reduccion_vs_manual) if inv_stock else '—' }}%</b>
+                            <span>Reducción vs. gestión manual</span></div></div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-7"><div id="g5" class="chart"></div></div>
+                        <div class="col-12 col-lg-5">
+                            <h6 class="fw-bold small text-uppercase text-muted mb-2">
+                                <i class="fas fa-box-open me-1"></i> Productos agotados que requieren reposición</h6>
+                            <div class="scroll-y">
+                                <table class="kpi-table">
+                                    <thead><tr><th>Producto</th><th>Categoría</th><th class="text-end">Precio</th></tr></thead>
+                                    <tbody>
+                                    {% for p in inv_stock.agotados_detalle if inv_stock %}
+                                        <tr>
+                                            <td>{{ p.nombre[:28] }}</td>
+                                            <td><small class="text-muted">{{ p.categoria[:18] }}</small></td>
+                                            <td class="text-end">S/ {{ '{:,.2f}'.format(p.precio) }}</td>
+                                        </tr>
+                                    {% else %}
+                                        <tr><td colspan="3" class="text-center text-success py-3">
+                                            <i class="fas fa-check-circle me-1"></i>Ningún producto agotado</td></tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ---------- KPI 6 ---------- -->
+        <div class="tab-pane fade" id="p-6">
+            <div class="kpi-detail">
+                <div class="kpi-detail__head">
+                    <span class="kpi-card__num" style="background:#ea580c">6</span>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Rotación de inventario</h5>
+                        <small class="text-muted">Qué tan rápido se vende el stock que se compra</small>
+                    </div>
+                </div>
+                <div class="kpi-detail__body">
+                    <div class="formula mb-3">Unidades vendidas en 30 días / Stock actual</div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>{{ '{:,.2f}'.format(inv_rotacion.valor) if inv_rotacion else '—' }}x</b>
+                            <span>Índice de rotación</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>{{ inv_rotacion.unidades_vendidas_30d if inv_rotacion else '—' }}</b>
+                            <span>Unidades (30 días)</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>{{ '{:,.0f}'.format(inv_rotacion.stock_total) if inv_rotacion else '—' }}</b>
+                            <span>Unidades en stock</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b class="text-warning">{{ inv_rotacion.inventario_dormido if inv_rotacion else '—' }}</b>
+                            <span>Inventario dormido</span></div></div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-7">
+                            <div id="g6" class="chart"></div>
+                            <p class="small text-muted mb-0 mt-2">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                Se considera inventario <strong>dormido</strong> el producto con existencias que no
+                                registró ninguna salida en los últimos 30 días: es dinero detenido en almacén.
+                            </p>
+                        </div>
+                        <div class="col-12 col-lg-5">
+                            <h6 class="fw-bold small text-uppercase text-muted mb-2">
+                                <i class="fas fa-bolt me-1"></i> Mayor rotación por producto</h6>
+                            <div class="scroll-y">
+                                <table class="kpi-table">
+                                    <thead><tr><th>Producto</th><th class="text-end">Vendidas 30d</th>
+                                        <th class="text-end">Stock</th><th class="text-end">Rotación</th></tr></thead>
+                                    <tbody>
+                                    {% for p in inv_rotacion.top_rotacion if inv_rotacion %}
+                                        <tr>
+                                            <td>{{ p.producto[:26] }}</td>
+                                            <td class="text-end">{{ p.vendidas_30d }}</td>
+                                            <td class="text-end">{{ p.stock }}</td>
+                                            <td class="text-end"><span class="badge badge-ok border">{{ p.rotacion }}x</span></td>
+                                        </tr>
+                                    {% else %}
+                                        <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ---------- KPI 7 ---------- -->
+        <div class="tab-pane fade" id="p-7">
+            <div class="kpi-detail">
+                <div class="kpi-detail__head">
+                    <span class="kpi-card__num" style="background:#0891b2">7</span>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Precisión en el cierre de caja</h5>
+                        <small class="text-muted">Qué tan controlado está el efectivo del día a día</small>
+                    </div>
+                </div>
+                <div class="kpi-detail__body">
+                    <div class="formula mb-3">((Total de cierres − Cierres con diferencia) / Total de cierres) × 100</div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>{{ k7.cierres_totales if k7 else '—' }}</b><span>Cierres totales</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b class="text-success">{{ k7.cierres_exactos if k7 else '—' }}</b>
+                            <span>Cuadrados</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b class="text-danger">{{ k7.cierres_con_diferencia if k7 else '—' }}</b>
+                            <span>Con diferencia</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b class="text-danger">S/ {{ '{:,.2f}'.format(k7.descuadre_total) if k7 else '—' }}</b>
+                            <span>Descuadre total</span></div></div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-7"><div id="g7" class="chart"></div></div>
+                        <div class="col-12 col-lg-5">
+                            <h6 class="fw-bold small text-uppercase text-muted mb-2">
+                                <i class="fas fa-exclamation-circle me-1"></i> Cierres con diferencia</h6>
+                            <div class="scroll-y">
+                                <table class="kpi-table">
+                                    <thead><tr><th>Fecha</th><th>Vendedor</th>
+                                        <th class="text-end">Esperado</th><th class="text-end">Diferencia</th></tr></thead>
+                                    <tbody>
+                                    {% for d in k7.desalineaciones if k7 %}
+                                        <tr>
+                                            <td>{{ d.fecha }}</td>
+                                            <td>{{ d.vendedor[:20] }}</td>
+                                            <td class="text-end">S/ {{ '{:,.2f}'.format(d.esperado) }}</td>
+                                            <td class="text-end text-danger fw-bold">S/ {{ '{:,.2f}'.format(d.diferencia) }}</td>
+                                        </tr>
+                                    {% else %}
+                                        <tr><td colspan="4" class="text-center text-success py-3">
+                                            <i class="fas fa-check-circle me-1"></i>Todos los cierres cuadraron</td></tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ---------- KPI 8 ---------- -->
+        <div class="tab-pane fade" id="p-8">
+            <div class="kpi-detail">
+                <div class="kpi-detail__head">
+                    <span class="kpi-card__num" style="background:#4f46e5">8</span>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Crecimiento de la base de clientes</h5>
+                        <small class="text-muted">Capacidad de atraer clientes nuevos de forma sostenida</small>
+                    </div>
+                </div>
+                <div class="kpi-detail__body">
+                    <div class="formula mb-3">Número de clientes nuevos registrados en el periodo</div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>{{ k8.total_clientes if k8 else '—' }}</b><span>Clientes totales</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b class="text-success">{{ k8.nuevos_mes if k8 else '—' }}</b>
+                            <span>Nuevos este mes</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>{{ k8.clientes_recurrentes if k8 else '—' }}</b>
+                            <span>Recurrentes</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>{{ '{:,.2f}'.format(k8.tasa_retencion) if k8 else '—' }}%</b>
+                            <span>Tasa de retención</span></div></div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-8"><div id="g8" class="chart"></div></div>
+                        <div class="col-12 col-lg-4">
+                            <div class="row g-2 mb-3">
+                                <div class="col-6"><div class="mini-stat">
+                                    <b>{{ k8.base_3m if k8 else '—' }}</b>
+                                    <span>Promedio 1er trimestre</span></div></div>
+                                <div class="col-6"><div class="mini-stat">
+                                    <b class="text-success">{{ k8.tendencia_3m if k8 else '—' }}</b>
+                                    <span>Promedio últimos 3 meses</span></div></div>
+                            </div>
+                            <div class="formula mb-2">META: crecimiento constante mes a mes, con picos en campaña escolar</div>
+                            {% if k8 %}
+                            <div class="alert {{ 'alert-success' if k8.cumple_meta else 'alert-warning' }} py-2 px-3 mb-0 small">
+                                {% if k8.cumple_meta %}
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    La base de clientes <strong>crece de forma sostenida</strong>:
+                                    {{ '{:+.2f}'.format(k8.tendencia_pct) }}% entre el primer y el
+                                    último trimestre de medición. Se registraron
+                                    <strong>{{ k8.nuevos_mes }}</strong> clientes nuevos en el mes.
+                                {% else %}
+                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                    Se registraron <strong>{{ k8.nuevos_mes }}</strong> clientes nuevos.
+                                    La meta pide crecer cada mes.
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ---------- KPI 9 ---------- -->
+        <div class="tab-pane fade" id="p-9">
+            <div class="kpi-detail">
+                <div class="kpi-detail__head">
+                    <span class="kpi-card__num" style="background:#b45309">9</span>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Tiempo de atención al cliente</h5>
+                        <small class="text-muted">El problema central que motivó este proyecto</small>
+                    </div>
+                </div>
+                <div class="kpi-detail__body">
+                    <div class="formula mb-3">
+                        Hora de atención real del cliente − Hora en que llegó al punto de venta
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>{{ '{:,.2f}'.format(k9.valor) if k9 else '—' }} min</b>
+                            <span>Tiempo promedio</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b class="text-success">{{ '{:,.1f}'.format(k9.reduccion_pct) if k9 else '—' }}%</b>
+                            <span>Reducción vs. manual</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>{{ k9.atenciones_medidas if k9 else '—' }}</b>
+                            <span>Atenciones medidas</span></div></div>
+                        <div class="col-6 col-md-3"><div class="mini-stat">
+                            <b>{{ '{:,.0f}'.format(k9.referencia_manual) if k9 else '—' }} min</b>
+                            <span>Referencia sin sistema</span></div></div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-7"><div id="g9" class="chart"></div></div>
+                        <div class="col-12 col-lg-5">
+                            <h6 class="fw-bold small text-uppercase text-muted mb-2">
+                                <i class="fas fa-hourglass-half me-1"></i> Distribución de tiempos</h6>
+                            <div class="scroll-y">
+                                <table class="kpi-table">
+                                    <thead><tr><th>Rango de atención</th><th class="text-end">Atenciones</th>
+                                        <th class="text-end">%</th></tr></thead>
+                                    <tbody>
+                                    {% set tot9 = k9.atenciones_medidas if k9 else 0 %}
+                                    {% for d in k9.distribucion if k9 %}
+                                        <tr>
+                                            <td>{{ d.rango[3:] }}</td>
+                                            <td class="text-end">{{ d.total }}</td>
+                                            <td class="text-end">{{ '{:.1f}'.format(d.total / tot9 * 100) if tot9 else 0 }}%</td>
+                                        </tr>
+                                    {% else %}
+                                        <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <h6 class="fw-bold small text-uppercase text-muted mb-2 mt-3">
+                                <i class="fas fa-clock me-1"></i> Horas de mayor atención</h6>
+                            <div class="scroll-y" style="max-height:150px">
+                                <table class="kpi-table">
+                                    <thead><tr><th>Hora</th><th class="text-end">Clientes</th></tr></thead>
+                                    <tbody>
+                                    {% for h in k9.horas_pico if k9 %}
+                                        <tr><td>{{ h.hora }}</td><td class="text-end">{{ h.clientes }}</td></tr>
+                                    {% else %}
+                                        <tr><td colspan="2" class="text-center text-muted py-3">Sin datos</td></tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script>
+const CP = {
+    ok: '#10b981', warn: '#f59e0b', bad: '#dc3545',
+    az: '#1e3a8a', te: '#0d9488', verde: '#16a34a', violeta: '#7c3aed',
+    rojo: '#dc2626', nar: '#ea580c', cian: '#0891b2', indigo: '#4f46e5', ocre: '#b45309'
+};
+const base = {
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    font: {family: 'Inter, sans-serif', size: 11, color: '#475467'},
+    margin: {t: 35, b: 40, l: 55, r: 25},
+    hoverlabel: {font: {family: 'Inter, sans-serif'}}
+};
+const graficos = [];
+
+function plot(id, trazas, layout) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const cfg = Object.assign({}, base, layout || {});
+    cfg.xaxis = Object.assign({gridcolor: '#eef2f7', zerolinecolor: '#e6eaf2'}, cfg.xaxis || {});
+    cfg.yaxis = Object.assign({gridcolor: '#eef2f7', zerolinecolor: '#e6eaf2'}, cfg.yaxis || {});
+    Plotly.newPlot(id, trazas, cfg, {responsive: true, displayModeBar: false});
+    graficos.push(id);
+}
+
+window.addEventListener('DOMContentLoaded', function () {
+
+    // ---------- Semáforo general ----------
+    const tarjetas = Array.from(document.querySelectorAll('.kpi-card'));
+    let enMeta = 0;
+    tarjetas.forEach(c => {
+        const b = c.querySelector('.badge-ok');
+        if (b) enMeta++;
+    });
+    const pct = Math.round(enMeta / tarjetas.length * 100);
+    document.getElementById('pctSemforo').textContent = pct + '%';
+    document.getElementById('kpisOk').textContent = enMeta;
+    const anillo = document.getElementById('anilloSemforo');
+    anillo.style.background =
+        `conic-gradient(#10b981 0deg ${pct * 3.6}deg, rgba(255,255,255,.18) ${pct * 3.6}deg 360deg)`;
+    anillo.style.color = '#fff';
+    document.getElementById('txtSemforo').textContent =
+        pct >= 70 ? 'Excelente gestión' : pct >= 40 ? 'En proceso de mejora' : 'Requiere atención';
+
+    // ---------- KPI 1 ----------
+    const s1 = {{ (k1.serie if k1 else [])|tojson }};
+    if (s1.length) {
+        plot('g1', [
+            {type: 'bar', name: 'Ventas (S/)', x: s1.map(r => r.etiqueta),
+             y: s1.map(r => r.total), marker: {color: CP.az}, hovertemplate: 'S/ %{y:,.2f}<extra></extra>'},
+            {type: 'scatter', mode: 'lines+markers', name: 'Tendencia', x: s1.map(r => r.etiqueta),
+             y: s1.map(r => r.total), line: {color: CP.ok, width: 2, dash: 'dash'},
+             hovertemplate: 'S/ %{y:,.2f}<extra></extra>'}
+        ], {hovermode: 'x unified'});
+    }
+
+    // ---------- KPI 2 ----------
+    const s2 = {{ (k2.serie if k2 else [])|tojson }};
+    if (s2.length) {
+        plot('g2', [
+            {type: 'bar', name: 'Ticket promedio (S/)', x: s2.map(r => r.etiqueta),
+             y: s2.map(r => r.ticket),
+             marker: {color: s2.map(r => r.ventas >= 0 ? CP.te : CP.bad)},
+             hovertemplate: 'S/ %{y:,.2f}<br>%{x}<extra></extra>'},
+            {type: 'scatter', mode: 'lines', name: 'Línea base ({{ (k2.base_mes if k2 else "") }})',
+             x: s2.map(r => r.etiqueta),
+             y: s2.map(() => {{ (k2.ticket_base if k2 else 0) }}),
+             line: {color: CP.nar, width: 2, dash: 'dot'}}
+        ], {hovermode: 'x unified'});
+    }
+
+    // ---------- KPI 3 ----------
+    const s3 = {{ (k3.serie if k3 else [])|tojson }};
+    if (s3.length) {
+        plot('g3', [
+            {type: 'bar', name: 'Ventas', x: s3.map(r => r.etiqueta), y: s3.map(r => r.ventas),
+             marker: {color: CP.verde}, hovertemplate: 'S/ %{y:,.2f}<extra></extra>'},
+            {type: 'bar', name: 'Costo', x: s3.map(r => r.etiqueta), y: s3.map(r => r.costo),
+             marker: {color: CP.nar}, hovertemplate: 'S/ %{y:,.2f}<extra></extra>'},
+            {type: 'scatter', mode: 'lines+markers+text', name: 'Margen %', yaxis: 'y2',
+             x: s3.map(r => r.etiqueta), y: s3.map(r => r.margen),
+             line: {color: CP.az, width: 3}, text: s3.map(r => r.margen + '%'),
+             textposition: 'top center', textfont: {size: 9, color: CP.az},
+             hovertemplate: '%{y:.2f}%<extra></extra>'}
+        ], {
+            barmode: 'group', hovermode: 'x unified',
+            yaxis: {title: 'S/'},
+            yaxis2: {title: 'Margen %', overlaying: 'y', side: 'right', showgrid: false, range: [0, 50]}
+        });
+    }
+
+    // ---------- KPI 4 ----------
+    const s4 = {{ (k4.distribucion if k4 else [])|tojson }};
+    if (s4.length) {
+        plot('g4', [{
+            type: 'pie', hole: 0.55, labels: s4.map(r => r.estado),
+            values: s4.map(r => r.total),
+            marker: {colors: [CP.verde, CP.az, CP.nar, CP.rojo, CP.violeta, CP.cian,
+                              '#94a3b8', CP.indigo].slice(0, s4.length)},
+            textinfo: 'label+percent', hovertemplate: '%{label}: %{value} pedidos<extra></extra>'
+        }], {
+            legend: {orientation: 'h', y: -0.12},
+            margin: {t: 20, b: 75, l: 30, r: 30},
+            annotations: [{
+                text: '{{ (k4.valor if k4 else 0) }}%<br><span style="font-size:10px">conversión</span>',
+                x: 0.5, y: 0.5, showarrow: false, font: {size: 17, color: '#101828'}
+            }]
+        });
+    }
+
+    // ---------- KPI 5 ----------
+    const s5 = {{ (inv_stock.serie if inv_stock else [])|tojson }};
+    if (s5.length) {
+        plot('g5', [{
+            type: 'bar', name: '% de productos agotados', x: s5.map(r => r.etiqueta),
+            y: s5.map(r => r.valor),
+            marker: {color: s5.map(r => r.valor < 5 ? CP.ok : (r.valor < 12 ? CP.warn : CP.bad))},
+            hovertemplate: '%{y:.2f}% agotados<extra></extra>'
+        }, {
+            type: 'scatter', mode: 'lines', name: 'Meta de gestión (85% menos)',
+            y: 100 * (1 - {{ (inv_stock.meta / 100) if inv_stock else 0.85 }}),
+            x: s5.map(r => r.etiqueta),
+            line: {color: CP.ok, width: 2, dash: 'dot'}
+        }], {hovermode: 'x unified', yaxis: {title: '% agotado', rangemode: 'tozero'}});
+    }
+
+    // ---------- KPI 6 ----------
+    const s6 = {{ (inv_rotacion.top_rotacion if inv_rotacion else [])|tojson }};
+    if (s6.length) {
+        plot('g6', [{
+            type: 'bar', orientation: 'h', name: 'Rotación (x)',
+            y: s6.map(r => r.producto.slice(0, 26)), x: s6.map(r => r.rotacion),
+            marker: {color: s6.map(r => r.rotacion >= 1 ? CP.ok : (r.rotacion >= 0.3 ? CP.warn : CP.bad))},
+            hovertemplate: '%{x:.2f}x<extra></extra>'
+        }], {margin: {t: 20, b: 30, l: 165, r: 40}, xaxis: {title: 'veces'}});
+    }
+
+    // ---------- KPI 7 ----------
+    const s7 = {{ (k7.serie if k7 else [])|tojson }};
+    if (s7.length) {
+        plot('g7', [
+            {type: 'bar', name: 'Cierres', x: s7.map(r => r.etiqueta), y: s7.map(r => r.cierres),
+             marker: {color: CP.cian, opacity: .35}, yaxis: 'y2',
+             hovertemplate: '%{y} cierres<extra></extra>'},
+            {type: 'scatter', mode: 'lines+markers', name: 'Precisión (%)',
+             x: s7.map(r => r.etiqueta), y: s7.map(r => r.precision),
+             line: {color: CP.cian, width: 3}, marker: {size: 8},
+             hovertemplate: '%{y:.2f}%<extra></extra>'},
+            {type: 'scatter', mode: 'lines', name: 'Meta 99%', x: s7.map(r => r.etiqueta),
+             y: s7.map(() => 99), line: {color: CP.ok, width: 2, dash: 'dot'}}
+        ], {
+            hovermode: 'x unified', yaxis: {title: 'Precisión %', range: [90, 101]},
+            yaxis2: {title: 'Cierres', overlaying: 'y', side: 'right', showgrid: false}
+        });
+    }
+
+    // ---------- KPI 8 ----------
+    const s8 = {{ (k8.serie if k8 else [])|tojson }};
+    if (s8.length) {
+        plot('g8', [
+            {type: 'bar', name: 'Clientes nuevos', x: s8.map(r => r.etiqueta),
+             y: s8.map(r => r.nuevos), marker: {color: CP.indigo},
+             hovertemplate: '%{y} nuevos<extra></extra>'},
+            {type: 'scatter', mode: 'lines+markers', name: 'Acumulado', yaxis: 'y2',
+             x: s8.map(r => r.etiqueta), y: s8.map(r => r.acumulado),
+             line: {color: CP.az, width: 3}, marker: {size: 7},
+             hovertemplate: '%{y} acumulados<extra></extra>'}
+        ], {
+            hovermode: 'x unified', barmode: 'group',
+            yaxis: {title: 'Nuevos', rangemode: 'tozero'},
+            yaxis2: {title: 'Acumulado', overlaying: 'y', side: 'right', showgrid: false}
+        });
+    }
+
+    // ---------- KPI 9 ----------
+    const s9d = {{ (k9.distribucion if k9 else [])|tojson }};
+    const s9s = {{ (k9.serie if k9 else [])|tojson }};
+    if (s9d.length || s9s.length) {
+        plot('g9', [
+            {
+                type: 'bar', name: 'Atenciones por rango', x: s9d.map(r => r.rango.slice(3)),
+                y: s9d.map(r => r.total),
+                marker: {color: [CP.ok, CP.ok, CP.warn, CP.nar, CP.bad].slice(0, s9d.length)},
+                hovertemplate: '%{y} atenciones<extra></extra>'
+            },
+            {
+                type: 'scatter', mode: 'lines+markers', name: 'Tiempo promedio (min)', yaxis: 'y2',
+                x: s9s.map(r => r.etiqueta), y: s9s.map(r => r.promedio),
+                line: {color: CP.ocre, width: 3}, marker: {size: 7},
+                hovertemplate: '%{y:.2f} min<extra></extra>'
+            }
+        ], {
+            barmode: 'group', hovermode: 'x unified',
+            yaxis: {title: 'Atenciones', rangemode: 'tozero'},
+            yaxis2: {title: 'Minutos', overlaying: 'y', side: 'right', showgrid: false}
+        });
+    }
+
+    window.addEventListener('resize', () => graficos.forEach(g => {
+        try { Plotly.Plots.resize(g); } catch (e) {}
+    }));
+});
+
+document.getElementById('btnRefrescar').addEventListener('click', function () {
+    this.disabled = true;
+    this.querySelector('i').classList.add('fa-spin');
+    fetch('/api/kpi/completo')
+        .then(() => setTimeout(() => location.reload(), 400))
+        .catch(() => location.reload());
+});
+</script>
+{% endblock %}

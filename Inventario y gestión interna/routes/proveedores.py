@@ -28,6 +28,47 @@ def nuevo_proveedor():
     return render_template('proveedor_form.html')
 
 
+@proveedores_bp.route('/ver_productos_proveedor')
+@proveedores_bp.route('/ver_producto_proveedor')
+def ver_productos_por_proveedor():
+    """Catalogo de productos asignado a un proveedor.
+
+    Las unidades vendidas por producto se sacan de movimientos_stock, que es
+    el libro de movimientos de inventario. No se consulta comercial_db.
+    """
+    from models.producto import Producto
+    from sqlalchemy import text
+
+    proveedores = Proveedor.query.filter_by(activo=True).all()
+    proveedor_id = request.args.get('proveedor_id', type=int)
+    proveedor_seleccionado = None
+    productos = []
+
+    if proveedor_id:
+        proveedor_seleccionado = db.session.get(Proveedor, proveedor_id)
+        if proveedor_seleccionado:
+            productos = Producto.query.filter_by(proveedor_id=proveedor_id).all()
+            vendidos = {
+                int(r.producto_id): int(r.n or 0)
+                for r in db.session.execute(text("""
+                    SELECT producto_id, SUM(cantidad) AS n
+                    FROM movimientos_stock
+                    WHERE tipo = 'SALIDA'
+                    GROUP BY producto_id
+                """)).fetchall()
+            }
+            for p in productos:
+                p.total_ventas = vendidos.get(p.id, 0)
+
+    return render_template(
+        'ver_producto_proveedor.html',
+        proveedores=proveedores,
+        proveedor_id=proveedor_id,
+        proveedor_seleccionado=proveedor_seleccionado,
+        productos=productos
+    )
+
+
 @proveedores_bp.route('/proveedores', methods=['GET'])
 def api_listar_proveedores():
     return jsonify([p.to_dict() for p in Proveedor.query.all()])
