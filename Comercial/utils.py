@@ -30,6 +30,15 @@ def obtener_categorias():
     return []
 
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'usuario_id' not in session:
+            return redirect('/login')
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 def login_required_cliente(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):

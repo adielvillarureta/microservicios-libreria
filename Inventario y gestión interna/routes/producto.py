@@ -1,7 +1,7 @@
 ﻿import os
 
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DataError, IntegrityError, StatementError
 from werkzeug.utils import secure_filename
 
 from extensions import db
@@ -67,8 +67,13 @@ def guardar_producto():
     imagen = _guardar_imagen()
     if imagen:
         producto.imagen = imagen
-    db.session.add(producto)
-    db.session.commit()
+    try:
+        db.session.add(producto)
+        db.session.commit()
+    except (DataError, IntegrityError, StatementError):
+        db.session.rollback()
+        flash('No se pudo guardar el producto: datos invalidos', 'danger')
+        return redirect(url_for('producto.listar_productos_html'))
     flash(f'Producto "{producto.nombre}" creado correctamente', 'success')
     return redirect(url_for('producto.listar_productos_html'))
 
@@ -103,7 +108,12 @@ def actualizar_producto(id):
     imagen = _guardar_imagen()
     if imagen:
         producto.imagen = imagen
-    db.session.commit()
+    try:
+        db.session.commit()
+    except (DataError, IntegrityError, StatementError):
+        db.session.rollback()
+        flash('No se pudo actualizar el producto: datos invalidos', 'danger')
+        return redirect(url_for('producto.listar_productos_html'))
     flash(f'Producto "{producto.nombre}" actualizado correctamente', 'success')
     return redirect(url_for('producto.listar_productos_html'))
 
@@ -144,11 +154,17 @@ def api_obtener_producto(id):
 @producto_bp.route('/api/productos', methods=['POST'])
 def api_crear_producto():
     data = request.get_json(silent=True) or {}
+    if not str(data.get('nombre') or '').strip():
+        return jsonify({'error': 'El nombre es obligatorio'}), 400
     if not data.get('sku'):
         data.pop('sku', None)
     nuevo = Producto(**{k: v for k, v in data.items() if k in CAMPOS_EDITABLES})
-    db.session.add(nuevo)
-    db.session.commit()
+    try:
+        db.session.add(nuevo)
+        db.session.commit()
+    except (DataError, IntegrityError, StatementError):
+        db.session.rollback()
+        return jsonify({'error': 'Datos invalidos para el producto'}), 400
     return jsonify(nuevo.to_dict()), 201
 
 
@@ -157,10 +173,16 @@ def api_crear_producto():
 def api_actualizar_producto(id):
     producto = db.get_or_404(Producto, id)
     data = request.get_json(silent=True) or {}
+    if 'nombre' in data and not str(data.get('nombre') or '').strip():
+        return jsonify({'error': 'El nombre no puede estar vacio'}), 400
     for key, value in data.items():
         if key in CAMPOS_EDITABLES:
             setattr(producto, key, value)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except (DataError, IntegrityError, StatementError):
+        db.session.rollback()
+        return jsonify({'error': 'Datos invalidos para el producto'}), 400
     return jsonify(producto.to_dict())
 
 
@@ -185,8 +207,19 @@ def api_obtener_stock(id):
 def api_actualizar_stock(id):
     producto = db.get_or_404(Producto, id)
     data = request.get_json(silent=True) or {}
-    producto.cantidad = data.get('cantidad', producto.cantidad)
-    db.session.commit()
+    if 'cantidad' in data:
+        try:
+            cantidad = int(data['cantidad'])
+        except (TypeError, ValueError):
+            return jsonify({'error': 'cantidad debe ser un numero entero'}), 400
+        if cantidad < 0:
+            return jsonify({'error': 'cantidad no puede ser negativa'}), 400
+        producto.cantidad = cantidad
+    try:
+        db.session.commit()
+    except (DataError, StatementError):
+        db.session.rollback()
+        return jsonify({'error': 'Datos invalidos'}), 400
     return jsonify({'stock': producto.cantidad})
 
 

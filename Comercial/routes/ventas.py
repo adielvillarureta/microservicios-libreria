@@ -9,6 +9,7 @@ from models.ventas import Venta
 from models.clientes import Cliente
 from models.usuarioSistema import UsuarioSistema
 from services.emailService import enviar_comprobante_email
+from utils import login_required
 
 INVENTARIO_URL = os.getenv('INVENTARIO_API_URL') or os.getenv('INVENTARIO_URL', 'http://localhost:5000')
 
@@ -50,6 +51,7 @@ def _enriquecer_venta(venta):
 
 
 @ventas_bp.route('/ventas/nueva', methods=['GET', 'POST'])
+@login_required
 def nueva_venta():
     productos = _obtener_productos()
     vendedores = _obtener_vendedores()
@@ -118,6 +120,7 @@ def nueva_venta():
 
 
 @ventas_bp.route('/ventas')
+@login_required
 def listar_ventas():
     rol = session.get('rol')
     vendedor_id = request.args.get('vendedor_id', type=int)
@@ -156,6 +159,7 @@ def listar_ventas():
 
 
 @ventas_bp.route('/comprobante/<int:venta_id>')
+@login_required
 def comprobante(venta_id):
     venta = Venta.query.get_or_404(venta_id)
     venta = _enriquecer_venta(venta)
@@ -164,6 +168,7 @@ def comprobante(venta_id):
 
 
 @ventas_bp.route('/ver_ventas', methods=['GET', 'POST'])
+@login_required
 def ver_ventas():
     fecha_seleccionada = None
     ventas = []
@@ -220,6 +225,7 @@ def api_buscar_producto():
 
 
 @ventas_bp.route('/api/ventas/rapida', methods=['POST'])
+@login_required
 def api_venta_rapida():
     data = request.get_json(silent=True) or {}
     items = data.get('items') or []

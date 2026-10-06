@@ -2,17 +2,20 @@ from flask import Blueprint, flash, redirect, render_template, request, jsonify
 from extensions import db
 from models.cupones import Cupon
 from datetime import datetime
+from utils import login_required
 
 cupones_bp = Blueprint('cupones', __name__)
 
 
 @cupones_bp.route('/cupones')
+@login_required
 def listar_cupones():
     cupones = Cupon.query.order_by(Cupon.fecha_creacion.desc()).all()
     return render_template('cupones.html', cupones=cupones)
 
 
 @cupones_bp.route('/cupon/nuevo', methods=['GET', 'POST'])
+@login_required
 def nuevo_cupon():
     if request.method == 'POST':
         codigo = request.form.get('codigo', '').upper().strip()
@@ -57,6 +60,7 @@ def nuevo_cupon():
 
 
 @cupones_bp.route('/cupon/eliminar/<int:cupon_id>')
+@login_required
 def eliminar_cupon(cupon_id):
     cupon = Cupon.query.get_or_404(cupon_id)
     codigo = cupon.codigo

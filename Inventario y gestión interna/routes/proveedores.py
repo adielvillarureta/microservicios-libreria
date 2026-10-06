@@ -1,5 +1,5 @@
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DataError, IntegrityError, StatementError
 
 from extensions import db
 from models.proveedor import Proveedor
@@ -33,8 +33,13 @@ def guardar_proveedor():
         email=request.form['email'],
         contacto=request.form['contacto']
     )
-    db.session.add(proveedor)
-    db.session.commit()
+    try:
+        db.session.add(proveedor)
+        db.session.commit()
+    except (DataError, IntegrityError, StatementError):
+        db.session.rollback()
+        flash('No se pudo guardar el proveedor: datos invalidos', 'danger')
+        return redirect(url_for('proveedores.listar_proveedores_html'))
     flash(f'Proveedor "{proveedor.nombre}" registrado correctamente', 'success')
     return redirect(url_for('proveedores.listar_proveedores_html'))
 
@@ -54,7 +59,12 @@ def actualizar_proveedor(id):
     proveedor.empresa = request.form['empresa']
     proveedor.email = request.form['email']
     proveedor.contacto = request.form['contacto']
-    db.session.commit()
+    try:
+        db.session.commit()
+    except (DataError, IntegrityError, StatementError):
+        db.session.rollback()
+        flash('No se pudo actualizar el proveedor: datos invalidos', 'danger')
+        return redirect(url_for('proveedores.listar_proveedores_html'))
     flash(f'Proveedor "{proveedor.nombre}" actualizado correctamente', 'success')
     return redirect(url_for('proveedores.listar_proveedores_html'))
 
@@ -137,9 +147,15 @@ def api_obtener_proveedor(id):
 @proveedores_bp.route('/api/proveedores', methods=['POST'])
 def api_crear_proveedor():
     data = request.get_json(silent=True) or {}
+    if not str(data.get('nombre') or '').strip():
+        return jsonify({'error': 'El nombre es obligatorio'}), 400
     nuevo = Proveedor(**{k: v for k, v in data.items() if k in CAMPOS_EDITABLES})
-    db.session.add(nuevo)
-    db.session.commit()
+    try:
+        db.session.add(nuevo)
+        db.session.commit()
+    except (DataError, IntegrityError, StatementError):
+        db.session.rollback()
+        return jsonify({'error': 'Datos invalidos para el proveedor'}), 400
     return jsonify(nuevo.to_dict()), 201
 
 
@@ -148,10 +164,16 @@ def api_crear_proveedor():
 def api_actualizar_proveedor(id):
     proveedor = Proveedor.query.get_or_404(id)
     data = request.get_json(silent=True) or {}
+    if 'nombre' in data and not str(data.get('nombre') or '').strip():
+        return jsonify({'error': 'El nombre no puede estar vacio'}), 400
     for key, value in data.items():
         if key in CAMPOS_EDITABLES:
             setattr(proveedor, key, value)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except (DataError, IntegrityError, StatementError):
+        db.session.rollback()
+        return jsonify({'error': 'Datos invalidos para el proveedor'}), 400
     return jsonify(proveedor.to_dict())
 
 
