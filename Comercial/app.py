@@ -51,7 +51,7 @@ def create_app():
     from routes.caja import caja_bp
     from routes.kpi import kpi_bp
     from routes.dashboard_api import dashboard_bp
-
+    from routes.config import config_bp
     app.register_blueprint(cliente_bp)
     app.register_blueprint(pedidos_bp)
     app.register_blueprint(ventas_bp)
@@ -62,6 +62,7 @@ def create_app():
     app.register_blueprint(caja_bp)
     app.register_blueprint(kpi_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(config_bp)
 
     @app.route('/')
     def index():

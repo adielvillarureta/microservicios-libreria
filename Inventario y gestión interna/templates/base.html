@@ -14,131 +14,179 @@
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <link href="{{ url_for('static', filename='css/theme.css') }}" rel="stylesheet">
+    <style>
+        .sidebar-inventario {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 260px;
+            background: linear-gradient(180deg, #0f2b5e 0%, #1a3a7a 100%);
+            color: #fff;
+            z-index: 1040;
+            overflow-y: auto;
+            padding: 1rem 0.75rem;
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+        }
+        .sidebar-inventario .brand {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            padding: .5rem .75rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, .15);
+            margin-bottom: 1rem;
+        }
+        .sidebar-inventario .brand .logo-mark {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: #d4af37;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0f2b5e;
+            font-size: 1.35rem;
+        }
+        .sidebar-inventario .brand .brand-text { line-height: 1.1; }
+        .sidebar-inventario .brand .brand-text strong { display: block; font-size: 1.05rem; }
+        .sidebar-inventario .brand .brand-text small { opacity: .75; font-size: .78rem; }
+        .sidebar-inventario a.menu-item {
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+            width: 100%;
+            padding: .6rem .75rem;
+            margin-bottom: .35rem;
+            border-radius: 8px;
+            color: rgba(255, 255, 255, .92);
+            text-decoration: none;
+            font-size: .92rem;
+            transition: background .15s ease, transform .15s ease;
+        }
+        .sidebar-inventario a.menu-item:hover {
+            background: rgba(255, 255, 255, .12);
+            color: #fff;
+            transform: translateX(2px);
+        }
+        .sidebar-inventario a.menu-item.active { background: rgba(212, 175, 55, .2); color: #fff; }
+        .sidebar-inventario .section-title {
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            opacity: .65;
+            margin: 1rem .75rem .4rem;
+        }
+        .main-with-sidebar {
+            margin-left: 260px;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        @media (max-width: 991.98px) {
+            .sidebar-inventario { transform: translateX(-100%); transition: transform .2s ease; }
+            .sidebar-open .sidebar-inventario { transform: translateX(0); }
+            .main-with-sidebar { margin-left: 0; }
+            .sidebar-backdrop {
+                position: fixed; inset: 0; background: rgba(0, 0, 0, .45); z-index: 1035; display: none;
+            }
+            .sidebar-open .sidebar-backdrop { display: block; }
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 
 <body>
-    <!-- ===== NAVBAR DE INVENTARIO ===== -->
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-inventario sticky-top">
+    <!-- ===== NAVBAR MÓVIL ===== -->
+    <nav class="navbar navbar-dark bg-dark d-lg-none sticky-top">
         <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="/">Inventario Salesiano</a>
+            <button class="btn btn-outline-light btn-sm" type="button" id="btnToggleSidebar">
+                <i class="fas fa-bars me-1"></i>Menú
+            </button>
+            <a class="navbar-brand fw-bold mb-0" href="/">Inventario Salesiano</a>
             {% if session.usuario_id %}
-            <div class="d-flex align-items-center text-white gap-2 gap-sm-3">
-                <div class="d-none d-md-block">
-                    <i class="fas fa-user-circle me-2"></i>
-                    {{ session.nombre }}
-                    <span class="badge bg-warning text-dark px-2 py-1 ms-1">{{ session.rol }}</span>
-                </div>
-                <div class="d-flex gap-1 gap-sm-2">
-                    <a class="btn btn-outline-light btn-sm px-2 px-sm-3" href="/logout">
-                        <i class="fas fa-sign-out-alt me-1"></i><span class="d-none d-sm-inline">Salir</span>
-                    </a>
-                </div>
-            </div>
+            <span class="badge bg-warning text-dark">{{ session.rol }}</span>
             {% endif %}
         </div>
     </nav>
 
-    <!-- ===== MENSAJES FLASH ===== -->
-    {% with mensajes = get_flashed_messages(with_categories = true) %}
-    {% if mensajes %}
-    <div class="container-fluid mt-3 px-3">
-        {% for categoria, mensaje in mensajes %}
-        <div class="alert alert-{{ categoria }} alert-dismissible fade show" role="alert">
-            <i class="fas fa-info-circle me-1"></i>{{ mensaje }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-    {% endwith %}
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
-    <!-- ===== PANEL DE INVENTARIO (BOTONES) ===== -->
+    <!-- ===== SIDEBAR LATERAL ===== -->
     {% if session.usuario_id %}
-    <div class="panel-inventario-wrapper">
-        <div class="container">
-            <div class="dashboard-header">
-                <div class="row align-items-center g-1 g-md-2">
-                    <div class="col-12 col-lg-4">
-                        <h1 class="fw-bold mb-0 text-dark">
-                            <i class="fas fa-boxes me-2 text-primary"></i>Gestión de Inventario
-                        </h1>
-                        <p class="mb-0 text-secondary small">
-                            <i class="fas fa-warehouse me-1"></i>Productos, proveedores y stock
-                        </p>
-                    </div>
-
-                    <div class="col-12 col-lg-8">
-                        {% set rol = session.rol if session.usuario_id else none %}
-                        <div class="admin-dashboard-grid">
-                            {% if rol in ('administrador', 'supervisor') %}
-                            <a href="/kpis" class="btn-card btn-card-purple" title="Indicadores Estrategicos del Negocio (KPIs)">
-                                <i class="fas fa-chart-line"></i>
-                                <span>KPIs</span>
-                            </a>
-                            <a href="/portada" class="btn-card btn-card-indigo" title="Portada del Proyecto">
-                                <i class="fas fa-file-alt"></i>
-                                <span>Portada</span>
-                            </a>
-                            {% endif %}
-                            <a href="/productos" class="btn-card btn-card-blue" title="Ver Productos">
-                                <i class="fas fa-box-open"></i>
-                                <span>Productos</span>
-                            </a>
-                            {% if rol == 'vendedor' %}
-                            <a href="/mi-panel" class="btn-card btn-card-gold" title="Panel exclusivo del vendedor">
-                                <i class="fas fa-user-tie"></i>
-                                <span>Mi Panel</span>
-                            </a>
-                            {% endif %}
-                            {% if rol in ('administrador', 'supervisor') %}
-                            <a href="/productos/nuevo" class="btn-card btn-card-gold" title="Nuevo Producto">
-                                <i class="fas fa-plus-circle"></i>
-                                <span>Nuevo Producto</span>
-                            </a>
-                            <a href="/proveedores" class="btn-card btn-card-emerald" title="Proveedores">
-                                <i class="fas fa-handshake"></i>
-                                <span>Proveedores</span>
-                            </a>
-                            <a href="/proveedores/nuevo" class="btn-card btn-card-purple" title="Nuevo Proveedor">
-                                <i class="fas fa-user-plus"></i>
-                                <span>Nuevo Proveedor</span>
-                            </a>
-                            {% endif %}
-                            <a href="/ver_productos_proveedor" class="btn-card btn-card-orange" title="Productos por Proveedor">
-                                <i class="fas fa-chart-line"></i>
-                                <span>Por Proveedor</span>
-                            </a>
-                            {% if rol == 'administrador' %}
-                            <a href="/vendedores" class="btn-card btn-card-indigo" title="Gestion de vendedores">
-                                <i class="fas fa-users"></i>
-                                <span>Vendedores</span>
-                            </a>
-                            <a href="/bloqueos" class="btn-card btn-card-rose" title="Bloqueos de IP">
-                                <i class="fas fa-shield-halved"></i>
-                                <span>Bloqueos</span>
-                            </a>
-                            {% endif %}
-                            <a href="/" class="btn-card btn-card-pink" title="Dashboard">
-                                <i class="fas fa-chart-pie"></i>
-                                <span>Dashboard</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
+    <aside class="sidebar-inventario" id="sidebarInventario">
+        <div class="brand">
+            <div class="logo-mark"><i class="fas fa-warehouse"></i></div>
+            <div class="brand-text">
+                <strong>Inventario Salesiano</strong>
+                <small>Gestión y stock</small>
             </div>
         </div>
-    </div>
+
+        {% set rol = session.rol if session.usuario_id else none %}
+        <div class="section-title">General</div>
+        <a href="/" class="menu-item"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+        <a href="/productos" class="menu-item"><i class="fas fa-box-open"></i><span>Productos</span></a>
+        <a href="/productos/nuevo" class="menu-item"><i class="fas fa-plus-circle"></i><span>Nuevo Producto</span></a>
+        <a href="/proveedores" class="menu-item"><i class="fas fa-handshake"></i><span>Proveedores</span></a>
+        <a href="/proveedores/nuevo" class="menu-item"><i class="fas fa-user-plus"></i><span>Nuevo Proveedor</span></a>
+        <a href="/ver_productos_proveedor" class="menu-item"><i class="fas fa-chart-line"></i><span>Por Proveedor</span></a>
+
+        {% if rol in ('administrador', 'supervisor') %}
+        <div class="section-title">Inteligencia</div>
+        <a href="/kpis" class="menu-item"><i class="fas fa-chart-line"></i><span>KPIs</span></a>
+        <a href="/portada" class="menu-item"><i class="fas fa-file-alt"></i><span>Portada</span></a>
+        {% endif %}
+
+        {% if rol == 'vendedor' %}
+        <div class="section-title">Mi espacio</div>
+        <a href="/mi-panel" class="menu-item"><i class="fas fa-user-tie"></i><span>Mi Panel</span></a>
+        {% endif %}
+
+        {% if rol == 'administrador' %}
+        <div class="section-title">Administración</div>
+        <a href="/vendedores" class="menu-item"><i class="fas fa-users"></i><span>Vendedores</span></a>
+        <a href="/bloqueos" class="menu-item"><i class="fas fa-shield-halved"></i><span>Bloqueos</span></a>
+        {% endif %}
+
+        <div class="section-title">Sesión</div>
+        <div class="px-2 mb-2 small opacity-75">
+            <i class="fas fa-user-circle me-1"></i>{{ session.nombre }}
+            <span class="badge bg-warning text-dark ms-1">{{ session.rol }}</span>
+        </div>
+        <a href="/logout" class="menu-item"><i class="fas fa-sign-out-alt"></i><span>Salir</span></a>
+    </aside>
     {% endif %}
 
     <!-- ===== CONTENIDO DE CADA PÁGINA ===== -->
-    <div class="main-container fade-in">
+    <div class="{% if session.usuario_id %}main-with-sidebar{% else %}container-fluid{% endif %} fade-in">
+        {% with mensajes = get_flashed_messages(with_categories = true) %}
+        {% if mensajes %}
+        <div class="mb-3">
+            {% for categoria, mensaje in mensajes %}
+            <div class="alert alert-{{ categoria }} alert-dismissible fade show" role="alert">
+                <i class="fas fa-info-circle me-1"></i>{{ mensaje }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
         {% block contenido %}
         {% endblock %}
     </div>
 
+    <script>
+        (function () {
+            const btn = document.getElementById('btnToggleSidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            function closeSidebar() { document.body.classList.remove('sidebar-open'); }
+            if (btn) btn.addEventListener('click', function () { document.body.classList.toggle('sidebar-open'); });
+            if (backdrop) backdrop.addEventListener('click', closeSidebar);
+        })();
+    </script>
     <!-- BOOTSTRAP JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     {% block extra_js %}{% endblock %}
 </body>
+
 </html>

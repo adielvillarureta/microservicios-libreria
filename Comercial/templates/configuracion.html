@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block titulito %}Configuración - Comercial{% endblock %}
+{% block contenido %}
+<div class="container mt-4">
+    <h3 class="mb-3">Configuración de integraciones</h3>
+    <p class="text-muted">Estado de las APIs externas usadas por la boleta y las notificaciones.</p>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Correo (SMTP)</h5>
+                    <p>Host: <strong>{{ estado.email.host or 'No configurado' }}</strong></p>
+                    <p>Usuario: <strong>{{ estado.email.user or 'No configurado' }}</strong></p>
+                    <p>Estado: <strong>{% if estado.email.configurado %}Configurado{% else %}Pendiente{% endif %}</strong></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">SMS (Twilio)</h5>
+                    <p>Proveedor: <strong>{{ estado.sms.provider }}</strong></p>
+                    <p>SID: <strong>{% if estado.sms.twilio_sid %}Configurado{% else %}Pendiente{% endif %}</strong></p>
+                    <p>Token: <strong>{% if estado.sms.twilio_token %}Configurado{% else %}Pendiente{% endif %}</strong></p>
+                    <p>Desde: <strong>{{ estado.sms['from'] or 'No configurado' }}</strong></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Tienda</h5>
+                    <p>Teléfono de atención: <strong>{{ estado.tienda.telefono }}</strong></p>
+                    <p>Código de país: <strong>{{ estado.tienda.pais }}</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr>
+    <h5>Variables de entorno</h5>
+    <pre class="bg-light p-3 rounded">EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASSWORD, EMAIL_FROM
+SMS_PROVIDER, SMS_STORE_PHONE, SMS_COUNTRY_CODE
+TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM</pre>
+    <p class="text-muted small">Modifica estas variables en <code>docker-compose.yml</code> o en tu entorno y reinicia el servicio <code>comercial</code>.</p>
+</div>
+{% endblock %}

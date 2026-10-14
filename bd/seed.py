@@ -197,10 +197,10 @@ def seed_inventario():
         cur.execute(
             """INSERT INTO productos
                (nombre,descripcion,sku,codigo_barras,precio,costo,cantidad,
-                stock_minimo,stock_maximo,id_categoria,proveedor_id,destacado,estado)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,1)""",
+                stock_minimo,stock_maximo,id_categoria,proveedor_id,imagen,destacado,estado)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,1)""",
             (nombre, f"{nombre} - producto oficial Libreria Salesiana", sku, cb,
-             precio, costo, stock, 5, 300, cat_ids[cat_idx], prov, destacado))
+             precio, costo, stock, 5, 300, cat_ids[cat_idx], prov, f"prod_{i}.svg", destacado))
         productos.append({
             "id": cur.lastrowid, "nombre": nombre, "precio": precio, "costo": costo,
             "stock": stock, "cat": cat_ids[cat_idx], "proveedor": prov,

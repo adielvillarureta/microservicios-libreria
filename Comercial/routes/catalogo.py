@@ -6,6 +6,18 @@ from flask import Blueprint, jsonify, render_template, request
 catalogo_bp = Blueprint('catalogo', __name__)
 
 INVENTARIO_URL = os.getenv('INVENTARIO_API_URL') or os.getenv('INVENTARIO_URL', 'http://localhost:5000')
+INVENTARIO_PUBLIC_URL = os.getenv('INVENTARIO_PUBLIC_URL', 'http://localhost:5000')
+
+
+def _publicar_imagen(producto):
+    if not isinstance(producto, dict):
+        return producto
+    url = producto.get('imagen_url')
+    if not url and producto.get('imagen'):
+        url = '/static/img/productos/' + str(producto['imagen'])
+    if url and not str(url).startswith('http'):
+        producto['imagen_url'] = INVENTARIO_PUBLIC_URL.rstrip('/') + (url if url.startswith('/') else '/' + url)
+    return producto
 
 
 @catalogo_bp.route("/catalogo")
@@ -16,6 +28,7 @@ def catalogo_cliente():
 
         productos_response = requests.get(f"{INVENTARIO_URL}/api/productos/catalogo", timeout=5)
         productos = productos_response.json() if productos_response.status_code == 200 else []
+        productos = [_publicar_imagen(p) for p in (productos or [])]
 
         return render_template("catalogo_cliente.html", categorias=categorias, productos=productos)
     except Exception:
@@ -51,7 +64,9 @@ def api_productos():
         response = requests.get(f"{INVENTARIO_URL}/api/productos/catalogo", params=params, timeout=5)
 
         if response.status_code == 200:
-            return jsonify(response.json())
+            data = response.json() or []
+            data = [_publicar_imagen(p) for p in data]
+            return jsonify(data)
         return jsonify({"error": "Error al obtener productos"}), 500
 
     except requests.exceptions.ConnectionError:

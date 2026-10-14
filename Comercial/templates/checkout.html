@@ -419,7 +419,7 @@
                             <label class="field-label">Teléfono <span class="text-danger">*</span></label>
                             <input type="tel" id="clienteTelefono" class="field-value editable w-100" 
                                    value="{{ cliente.telefono if cliente else '' }}"
-                                   placeholder="987654321">
+                                   placeholder="987654321" required pattern="[0-9]{9}">
                         </div>
                     </div>
 
@@ -535,7 +535,7 @@
                                 <i class="fas fa-directions me-1"></i>Cómo llegar
                             </a>
                         </div>
-                        <div id="mapaTienda" class="mapa-frame mt-2"></div>
+                        <div id="mapaTienda" class="mapa-frame mt-2" role="region" aria-label="Mapa de la tienda"></div>
                         <small class="text-muted d-block mt-1">📌 Puedes recoger tu pedido en tienda con tu código de comprobante.</small>
                     </div>
 
@@ -544,14 +544,14 @@
                         <label class="field-label">Buscar tu vivienda en el mapa</label>
                         <div class="map-search-box">
                             <input type="text" id="buscarVivienda" class="form-control"
-                                   placeholder="Ej. Jr. Los Rosales 123, El Tambo"
+                                   placeholder="Ej. Jr. Los Rosales 123, El Tambo" aria-label="Buscar direccion de entrega"
                                    onkeydown="if(event.key==='Enter'){event.preventDefault();buscarVivienda();}">
                             <button type="button" class="btn-mapa-buscar" onclick="buscarVivienda()">
                                 <i class="fas fa-search me-1"></i>Buscar
                             </button>
                             <div id="resultadosBusqueda" class="map-sugerencias"></div>
                         </div>
-                        <div id="mapaDomicilio" class="mapa-frame entregas"></div>
+                        <div id="mapaDomicilio" class="mapa-frame entregas" role="region" aria-label="Mapa de entrega a domicilio"></div>
 
                         <label class="field-label mt-3">Dirección de entrega</label>
                         <textarea id="direccionEntrega" class="form-control" rows="2"
@@ -1148,12 +1148,23 @@ function procesarPago() {
     var documento = document.getElementById('documentoInput').value.trim();
     var direccion = document.getElementById('direccionEntrega').value.trim();
     
-    // Solo validar campos obligatorios (email y documento)
-    if (!email || !documento) {
+    // Campos obligatorios (email, telefono y documento)
+    if (!email || !telefono || !documento) {
         Swal.fire({
             icon: 'warning',
             title: 'Campos incompletos',
-            text: 'Por favor completa el Email y el Documento.',
+            text: 'Por favor completa el Email, el Teléfono y el Documento.',
+            confirmButtonColor: '#D4AF37'
+        });
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-credit-card me-2"></i>Continuar con el pago';
+        return;
+    }
+    if (!/^\d{9}$/.test(telefono)) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Teléfono inválido',
+            text: 'El teléfono debe tener 9 dígitos (ej. 987654321).',
             confirmButtonColor: '#D4AF37'
         });
         btn.disabled = false;
@@ -1234,7 +1245,7 @@ function procesarPago() {
         nombres: nombres || document.getElementById('clienteNombres').value || '',
         apellidos: apellidos || document.getElementById('clienteApellidos').value || '',
         email: email,
-        telefono: telefono || '999999999',
+        telefono: telefono,
         documento: documento,
         direccion: direccion || ''
     };
@@ -1261,7 +1272,7 @@ function procesarPago() {
         tipo_comprobante: tipoComprobante,
         direccion: direccion || '',
         email: email,
-        telefono: telefono || '999999999',
+        telefono: telefono,
         documento: documento,
         nombres: nombres,
         apellidos: apellidos,
@@ -1298,6 +1309,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Dirección unificada (misma entre carrito/checkout/localStorage)
+    var dirInput = document.getElementById('direccionEntrega');
+    if (dirInput && !dirInput.value) {
+        try {
+            var dirGuardada = localStorage.getItem('direccionEntrega');
+            if (dirGuardada) dirInput.value = dirGuardada;
+        } catch (e) {}
+    }
+
     var dniInput = document.getElementById('documentoInput');
     var dniValue = '{{ cliente.dni if cliente else "" }}';
     if (!dniValue) {

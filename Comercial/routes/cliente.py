@@ -6,6 +6,7 @@ import requests
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app, jsonify
 from datetime import datetime, timedelta
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 
 from extensions import db, bcrypt
 from models.clientes import Cliente
@@ -37,15 +38,22 @@ def _obtener_o_crear_cliente_social(info):
     cliente = Cliente.query.filter_by(email=info['email']).first()
     creado = False
     if not cliente:
-        cliente = Cliente(
-            nombres=info['nombres'] or 'Cliente',
-            apellidos=info['apellidos'] or '',
-            email=info['email'],
-            clave=os.urandom(24).hex()
-        )
-        db.session.add(cliente)
-        db.session.commit()
-        creado = True
+        try:
+            cliente = Cliente(
+                nombres=info['nombres'] or 'Cliente',
+                apellidos=info['apellidos'] or '',
+                email=(info['email'] or '').strip().lower(),
+                clave=os.urandom(24).hex()
+            )
+            db.session.add(cliente)
+            db.session.commit()
+            creado = True
+        except IntegrityError:
+            db.session.rollback()
+            cliente = Cliente.query.filter_by(email=(info['email'] or '').strip().lower()).first()
+            if not cliente:
+                cliente = Cliente.query.filter(Cliente.correo.ilike((info['email'] or '').strip())).first()
+            creado = False
     return cliente, creado
 
 
@@ -200,7 +208,7 @@ def login_cliente():
             flash("Acceso denegado: esta IP ha sido bloqueada. Espera 10 minutos.", "danger")
             return render_template("login_cliente.html", **template_data)
 
-        cliente = Cliente.query.filter_by(email=email).first()
+        cliente = Cliente.query.filter_by(correo=email).first()
 
         if not cliente:
             resultado = registrar_intento_fallido(email, ip_cliente, es_cliente=True)
@@ -311,7 +319,10 @@ def registro_cliente():
             return redirect(url_for("cliente.registro_cliente"))
 
         try:
-            existe = Cliente.query.filter_by(email=request.form["email"]).first()
+            email = (request.form.get("email") or "").strip().lower()
+            existe = Cliente.query.filter_by(correo=email).first()
+            if not existe:
+                existe = Cliente.query.filter(Cliente.correo.ilike(email)).first()
             if existe:
                 flash("El correo ya está registrado", "danger")
                 return redirect(url_for("cliente.registro_cliente"))
@@ -320,7 +331,7 @@ def registro_cliente():
                 dni=request.form.get("dni"),
                 nombres=request.form["nombres"],
                 apellidos=request.form["apellidos"],
-                email=request.form["email"],
+                email=email,
                 telefono=request.form.get("telefono"),
                 direccion=request.form.get("direccion"),
                 clave=bcrypt.generate_password_hash(request.form["clave"]).decode("utf-8"),
@@ -329,6 +340,14 @@ def registro_cliente():
             db.session.commit()
             flash("Registro exitoso", "success")
             return redirect(url_for("cliente.login_cliente"))
+        except IntegrityError as e:
+            db.session.rollback()
+            msg = str(getattr(e, "orig", e)).lower()
+            if 'correo' in msg or 'email' in msg or 'duplicate' in msg:
+                flash("El correo ya está registrado", "danger")
+            else:
+                flash("No se pudo registrar el cliente (datos duplicados)", "danger")
+            return redirect(url_for("cliente.registro_cliente"))
         except Exception as e:
             db.session.rollback()
             flash(f"Error: {str(e)}", "danger")
@@ -469,7 +488,7 @@ def recuperar_contrasena():
             flash("Ingresa tu correo electrónico", "danger")
             return redirect(url_for("cliente.recuperar_contrasena"))
 
-        cliente = Cliente.query.filter_by(email=email).first()
+        cliente = Cliente.query.filter_by(correo=email).first()
 
         if cliente:
             token = generar_token_recuperacion()

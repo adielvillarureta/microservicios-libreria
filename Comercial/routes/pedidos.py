@@ -1,13 +1,19 @@
 import os
 
 import requests
+from datetime import datetime
+
+from sqlalchemy.exc import IntegrityError
+from services.emailService import enviar_comprobante_email
 from flask import Blueprint, jsonify, render_template, redirect, request, session
 
 from extensions import db
 from models.clientes import Cliente
 from models.detallePedido import DetallePedido
+from models.detalleVenta import DetalleVenta
 from models.pedidos import Pedido
 from models.ventas import Venta
+from services.smsService import enviar_boleta_sms
 from utils import login_required_cliente, obtener_categorias
 
 pedidos_bp = Blueprint('pedidos_bp', __name__)
@@ -97,10 +103,10 @@ def crear_pedido():
     documento = cliente_data.get('documento', '').strip()
     direccion = cliente_data.get('direccion', '').strip()
 
-    if not nombre or not email:
-        return jsonify({'success': False, 'error': 'Completa tus datos de facturación'}), 400
+    if not nombre or not email or not telefono:
+        return jsonify({'success': False, 'error': 'Completa tus datos de facturación (incluye teléfono)'}), 400
 
-    cliente = Cliente.query.filter_by(email=email).first()
+    cliente = Cliente.query.filter_by(correo=email).first()
     if not cliente and session.get('cliente_id'):
         cliente = Cliente.query.get(session['cliente_id'])
 
@@ -115,8 +121,14 @@ def crear_pedido():
             direccion=direccion,
             clave=os.urandom(24).hex()
         )
-        db.session.add(cliente)
-        db.session.flush()
+        try:
+            db.session.add(cliente)
+            db.session.flush()
+        except IntegrityError:
+            db.session.rollback()
+            cliente = Cliente.query.filter_by(email=email).first()
+            if not cliente:
+                cliente = Cliente.query.filter(Cliente.correo.ilike(email)).first()
 
     if len(documento) == 8 and cliente.dni != documento:
         duplicado_dni = Cliente.query.filter(Cliente.dni == documento, Cliente.id != cliente.id).first()
@@ -126,6 +138,9 @@ def crear_pedido():
         cliente.telefono = telefono
     if not cliente.direccion and direccion:
         cliente.direccion = direccion
+
+    if not cliente:
+        return jsonify({'success': False, 'error': 'No se pudo registrar el cliente (correo duplicado)'}), 400
 
     total = 0.0
     for item in items:
@@ -172,17 +187,76 @@ def crear_pedido():
         cliente_documento=documento,
         cliente_razon_social=cliente_data.get('razon_social', ''),
         cliente_direccion_fiscal=direccion,
-        producto_nombre=items[0].get('nombre', ''),
-        cantidad=int(items[0].get('cantidad', 1)),
-        precio_unitario=float(items[0].get('precio', 0)),
         total_venta=total,
         tipo_comprobante=tipo_comprobante,
         numero_comprobante=f"P{pedido.id:06d}"
     )
     db.session.add(venta)
+    db.session.flush()
+
+    # Registramos los productos de la venta (boleta/comprobante)
+    for item in items:
+        cantidad = int(item.get('cantidad', 1))
+        precio = float(item.get('precio', 0))
+        db.session.add(DetalleVenta(
+            venta_id=venta.id,
+            producto_id=item.get('id'),
+            nombre_producto=item.get('nombre', ''),
+            cantidad=cantidad,
+            precio_unitario=precio,
+            subtotal=round(cantidad * precio, 2),
+        ))
+
     db.session.commit()
 
-    return jsonify({'success': True, 'pedido_id': pedido.id, 'total': total})
+    # Boleta por correo
+    email_resultado = False
+    try:
+        productos_email = [
+            {
+                'nombre': item.get('nombre', ''),
+                'cantidad': int(item.get('cantidad', 1)),
+                'precio_unitario': float(item.get('precio', 0)),
+                'total': round(int(item.get('cantidad', 1)) * float(item.get('precio', 0)), 2),
+            } for item in items
+        ]
+        email_resultado = enviar_comprobante_email(
+            destinatario=email,
+            cliente_nombre=f"{nombre} {apellido}".strip() or 'Cliente',
+            tipo_comprobante=tipo_comprobante,
+            numero_comprobante=venta.numero_comprobante,
+            fecha=datetime.now(),
+            productos=productos_email,
+            total_venta=total,
+        )
+    except Exception as e:
+        print(f"[EMAIL] Error enviando comprobante: {e}")
+        email_resultado = False
+
+    # Envio por SMS de la boleta + atencion al cliente al numero del checkout
+    sms_resultado = {}
+    try:
+        sms_resultado = enviar_boleta_sms(
+            telefono=telefono,
+            nombre=f"{nombre} {apellido}".strip(),
+            tipo_comprobante=tipo_comprobante,
+            numero_comprobante=venta.numero_comprobante,
+            total=total,
+            pedido_id=pedido.id,
+            venta_id=venta.id,
+            productos=[item.get('nombre', '') for item in items],
+        )
+    except Exception as e:
+        sms_resultado = {"success": False, "error": str(e)}
+
+    return jsonify({
+        'success': True,
+        'pedido_id': pedido.id,
+        'venta_id': venta.id,
+        'total': total,
+        'email': email_resultado,
+        'sms': sms_resultado,
+    })
 
 
 @pedidos_bp.route('/pedidos/cambiar-estado/<int:pedido_id>', methods=['POST'])

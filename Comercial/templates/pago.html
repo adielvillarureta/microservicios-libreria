@@ -639,7 +639,7 @@ function confirmarPedido() {
             nombres: checkoutData.nombres || cliente.nombres || '',
             apellidos: checkoutData.apellidos || cliente.apellidos || '',
             email: checkoutData.email || '',
-            telefono: checkoutData.telefono || cliente.telefono || '999999999',
+            telefono: checkoutData.telefono || cliente.telefono || '',
             documento: checkoutData.documento || '',
             razon_social: checkoutData.razon_social || cliente.razon_social || '',
             direccion: checkoutData.direccion || cliente.direccion || ''
@@ -666,10 +666,19 @@ function confirmarPedido() {
             localStorage.removeItem('tipoEntrega');
             localStorage.removeItem('direccionEntrega');
 
+            var envioHtml = '';
+            if (data.email) {
+                envioHtml += '<br><small>📧 Boleta enviada por correo.</small>';
+            }
+            if (data.sms && data.sms.success) {
+                envioHtml += '<br><small>📲 Boleta enviada por SMS.</small>';
+            } else if (data.sms && data.sms.error) {
+                envioHtml += '<br><small>⚠️ SMS no enviado (' + (data.sms.error) + ').</small>';
+            }
             Swal.fire({
                 icon: 'success',
                 title: '¡Pedido realizado!',
-                html: '✅ Pedido #' + data.pedido_id + '<br>Total: S/. ' + (data.total !== undefined ? Number(data.total).toFixed(2) : '0.00'),
+                html: '✅ Pedido #' + data.pedido_id + '<br>Total: S/. ' + (data.total !== undefined ? Number(data.total).toFixed(2) : '0.00') + envioHtml,
                 confirmButtonText: 'Ver mis pedidos',
                 confirmButtonColor: '#1e3a8a'
             }).then(function() {

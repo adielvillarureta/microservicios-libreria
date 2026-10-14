@@ -19,6 +19,9 @@ logger = logging.getLogger(__name__)
 
 COMERCIAL_URL = os.getenv("COMERCIAL_URL", "http://localhost:5001")
 INVENTARIO_URL = os.getenv("INVENTARIO_URL", "http://localhost:5000")
+# URLs publicas (para mostrar/abrir desde el navegador del usuario)
+COMERCIAL_PUBLIC_URL = os.getenv("COMERCIAL_PUBLIC_URL", "http://localhost:5001")
+INVENTARIO_PUBLIC_URL = os.getenv("INVENTARIO_PUBLIC_URL", "http://localhost:5000")
 
 
 def proxy_request(method, service_url, path, public_prefix=""):
@@ -116,8 +119,8 @@ def home():
         fecha_hora=datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
         comercial=comercial,
         inventario=inventario,
-        comercial_url=COMERCIAL_URL,
-        inventario_url=INVENTARIO_URL
+        comercial_url=COMERCIAL_PUBLIC_URL,
+        inventario_url=INVENTARIO_PUBLIC_URL
     )
 
 

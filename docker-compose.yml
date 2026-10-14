@@ -45,77 +45,82 @@ services:
     networks:
       - microservicios_net
 
-  # ==========================================================================
-  #  LAS APLICACIONES YA NO CORREN EN DOCKER
-  #  Comercial  -> localhost:5001   (python app.py)
-  #  Inventario -> localhost:5000   (python app.py)
-  #  Aqui solo viven las bases de datos y phpMyAdmin para verlas.
-  #  Los servicios de aplicacion se dejan comentados abajo por si los
-  #  necesitas mas adelante (tienen los puertos ya intercambiados).
-  # ==========================================================================
-  #
-  # comercial:
-  #   build: ./Comercial
-  #   container_name: comercial
-  #   restart: always
-  #   environment:
-  #     FLASK_ENV: production
-  #     DEBUG: "false"
-  #     SECRET_KEY: clave_secreta_comercial
-  #     MYSQL_DATABASE: comercial_db
-  #     MYSQL_USER: root
-  #     MYSQL_PASSWORD: rootpass
-  #     MYSQL_HOST: db_comercial
-  #     MYSQL_PORT: 3306
-  #     INVENTARIO_API_URL: http://host.docker.internal:5000
-  #   ports:
-  #     - "5001:5001"
-  #   extra_hosts:
-  #     - "host.docker.internal:host-gateway"
-  #   depends_on:
-  #     db_comercial:
-  #       condition: service_healthy
-  #   networks:
-  #     - microservicios_net
-  #
-  # inventario:
-  #   build: ./Inventario y gestión interna
-  #   container_name: inventario
-  #   restart: always
-  #   environment:
-  #     FLASK_ENV: production
-  #     DEBUG: "false"
-  #     SECRET_KEY: clave_secreta_inventario
-  #     MYSQL_DATABASE: inventario_db
-  #     MYSQL_USER: root
-  #     MYSQL_PASSWORD: rootpass
-  #     MYSQL_HOST: db_inventario
-  #     MYSQL_PORT: 3306
-  #     COMERCIAL_API_URL: http://host.docker.internal:5001
-  #   ports:
-  #     - "5000:5000"
-  #   extra_hosts:
-  #     - "host.docker.internal:host-gateway"
-  #   depends_on:
-  #     db_inventario:
-  #       condition: service_healthy
-  #   networks:
-  #     - microservicios_net
-  #
-  # gateway:
-  #   build: ./apiGateway/apiGateway
-  #   container_name: gateway
-  #   restart: always
-  #   environment:
-  #     COMERCIAL_URL: http://host.docker.internal:5001
-  #     INVENTARIO_URL: http://host.docker.internal:5000
-  #     SECRET_KEY: clave_secreta_gateway
-  #   ports:
-  #     - "8000:8000"
-  #   extra_hosts:
-  #     - "host.docker.internal:host-gateway"
-  #   networks:
-  #     - microservicios_net
+  comercial:
+    build: ./Comercial
+    container_name: comercial
+    restart: always
+    environment:
+      FLASK_ENV: production
+      DEBUG: "false"
+      SECRET_KEY: clave_secreta_comercial
+      MYSQL_DATABASE: comercial_db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: rootpass
+      MYSQL_HOST: db_comercial
+      MYSQL_PORT: 3306
+      INVENTARIO_API_URL: http://inventario:5000
+      INVENTARIO_PUBLIC_URL: http://localhost:5000
+      SMS_PROVIDER: ${SMS_PROVIDER:-mock}
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      SMS_STORE_PHONE: ${SMS_STORE_PHONE:- (064) 247763}
+      SMS_COUNTRY_CODE: ${SMS_COUNTRY_CODE:-+51}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM: ${TWILIO_FROM:-}
+    ports:
+      - "5001:5001"
+    depends_on:
+      db_comercial:
+        condition: service_healthy
+    networks:
+      - microservicios_net
+
+  inventario:
+    build: "./Inventario y gestión interna"
+    container_name: inventario
+    restart: always
+    environment:
+      FLASK_ENV: production
+      DEBUG: "false"
+      SECRET_KEY: clave_secreta_inventario
+      MYSQL_DATABASE: inventario_db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: rootpass
+      MYSQL_HOST: db_inventario
+      MYSQL_PORT: 3306
+      COMERCIAL_API_URL: http://comercial:5001
+      INVENTARIO_PUBLIC_URL: http://localhost:5000
+    ports:
+      - "5000:5000"
+    depends_on:
+      db_inventario:
+        condition: service_healthy
+      comercial:
+        condition: service_started
+    networks:
+      - microservicios_net
+
+  gateway:
+    build: ./apiGateway/apiGateway
+    container_name: gateway
+    restart: always
+    environment:
+      COMERCIAL_URL: http://comercial:5001
+      INVENTARIO_URL: http://inventario:5000
+      COMERCIAL_PUBLIC_URL: http://localhost:5001
+      INVENTARIO_PUBLIC_URL: http://localhost:5000
+      SECRET_KEY: clave_secreta_gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - comercial
+      - inventario
+    networks:
+      - microservicios_net
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
@@ -124,12 +129,10 @@ services:
     ports:
       - "8080:80"
     environment:
-      # Servidor por defecto: microservicio COMERCIAL
       PMA_HOST: db_comercial
       PMA_PORT: "3306"
       PMA_USER: root
       PMA_PASSWORD: rootpass
-      # Registra los DOS microservicios para ver ambas bases desde phpMyAdmin
       PMA_HOSTS: "db_comercial:3306,db_inventario:3306"
       PMA_ARBITRARY: "1"
     depends_on:

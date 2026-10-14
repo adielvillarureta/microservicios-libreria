@@ -220,6 +220,22 @@ docker compose logs -f comercial
 docker compose logs -f inventario
 ```
 
+### SMS en el checkout (boleta + atención al cliente)
+El teléfono es obligatorio en **checkout** (no en registro). Al confirmar el pedido
+se envía un SMS con el comprobante y la línea de atención al cliente usando el número
+que deja el cliente en `/checkout`.
+
+Variables de entorno (servicio `comercial`):
+```powershell
+SMS_PROVIDER=mock                 # mock | twilio
+SMS_STORE_PHONE=(064) 247763
+SMS_COUNTRY_CODE=+51
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxx
+TWILIO_FROM=+1xxxxxxxxxx
+```
+Con credenciales reales: `SMS_PROVIDER=twilio` y `docker compose up -d --build comercial`.
+
 ---
 
 ## 7. Archivos nuevos

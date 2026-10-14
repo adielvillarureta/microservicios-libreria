@@ -428,7 +428,7 @@
                                     {{ venta.cliente_telefono if venta else cliente.telefono }}
                                 </p>
                                 <p><strong>🆔 DNI / RUC:</strong><br>
-                                    <strong class="text-primary">{{ venta.cliente_documento if venta else cliente.dni }}</strong>
+                                    <strong class="text-primary">{{ (venta.cliente_documento if venta else cliente.dni) or '—' }}</strong>
                                 </p>
                                 
                                 {% if venta and venta.cliente_razon_social %}
