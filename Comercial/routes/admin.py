@@ -349,7 +349,7 @@ def _componer_bloqueo(bloqueo):
 
 
 def _componer_intento(registro, tipo='Cliente'):
-    cliente = Cliente.query.filter_by(email=registro.email).first()
+    cliente = Cliente.query.filter_by(correo=registro.email).first()
     usuario = UsuarioSistema.query.filter_by(correo=registro.email).first()
     if usuario:
         nombre_completo = f"{usuario.nombres} {usuario.apellidos}".strip()

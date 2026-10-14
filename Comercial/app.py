@@ -52,7 +52,7 @@ def create_app():
     from routes.kpi import kpi_bp
     from routes.dashboard_api import dashboard_bp
     from routes.config import config_bp
-    app.register_blueprint(cliente_bp)
+    from routes.api_v1 import api_v1_bp
     app.register_blueprint(pedidos_bp)
     app.register_blueprint(ventas_bp)
     app.register_blueprint(cupones_bp)
@@ -63,7 +63,7 @@ def create_app():
     app.register_blueprint(kpi_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(config_bp)
-
+    app.register_blueprint(api_v1_bp, url_prefix='/api/v1')
     @app.route('/')
     def index():
         return render_template('index.html')
@@ -124,7 +124,7 @@ def create_app():
         from models.cajas import Caja
         from models.movimientoCaja import MovimientoCaja
         from models.notificaciones import Notificacion
-
+        from models.carrito import ItemCarrito
         db.create_all()
 
         if not UsuarioSistema.query.filter_by(correo='admin@admin.com').first():

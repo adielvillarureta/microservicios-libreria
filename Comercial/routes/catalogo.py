@@ -1,7 +1,8 @@
 import os
 
 import requests
-from flask import Blueprint, jsonify, render_template, request
+from urllib.parse import urlsplit
+from flask import Blueprint, jsonify, render_template, make_response, request
 
 catalogo_bp = Blueprint('catalogo', __name__)
 
@@ -15,8 +16,17 @@ def _publicar_imagen(producto):
     url = producto.get('imagen_url')
     if not url and producto.get('imagen'):
         url = '/static/img/productos/' + str(producto['imagen'])
-    if url and not str(url).startswith('http'):
-        producto['imagen_url'] = INVENTARIO_PUBLIC_URL.rstrip('/') + (url if url.startswith('/') else '/' + url)
+    if not url:
+        return producto
+
+    url_text = str(url)
+    parsed = urlsplit(url_text)
+    ruta_relativa = parsed.path if parsed.scheme in ('http', 'https') else url_text
+    if not ruta_relativa.startswith('/'):
+        ruta_relativa = '/' + ruta_relativa
+    ruta_relativa = ruta_relativa.lstrip('/')
+    # Se sirve desde Comercial para evitar CORS/problemas de host/red.
+    producto['imagen_url'] = '/img/inventario/' + ruta_relativa
     return producto
 
 
@@ -73,3 +83,19 @@ def api_productos():
         return jsonify({"error": "El microservicio de Inventario no está disponible"}), 503
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@catalogo_bp.route("/img/inventario/<path:filename>")
+def imagen_inventario_proxima(filename):
+    try:
+        response = requests.get(f"{INVENTARIO_URL}/{filename}", timeout=10)
+        if response.status_code != 200:
+            return make_response("Not found", response.status_code)
+        resp = make_response(response.content)
+        resp.headers['Content-Type'] = response.headers.get('Content-Type', 'application/octet-stream')
+        resp.headers['Cache-Control'] = 'public, max-age=86400'
+        return resp
+    except requests.exceptions.ConnectionError:
+        return make_response("Inventario no disponible", 503)
+    except Exception as e:
+        return make_response(str(e), 500)

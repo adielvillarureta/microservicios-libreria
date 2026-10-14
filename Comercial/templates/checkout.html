@@ -259,14 +259,36 @@
 
     /* ===== MAPAS ===== */
     .mapa-frame {
-        height: 260px;
-        border-radius: 12px;
-        border: 2px solid #e5e7eb;
+        height: 360px;
+        min-height: 300px;
+        border-radius: 14px;
+        border: 2px solid #d7deea;
         z-index: 0;
+        box-shadow: inset 0 0 0 1px rgba(30,58,138,.08);
     }
     .mapa-frame.entregas {
-        height: 220px;
+        height: 320px;
+        min-height: 260px;
     }
+    .map-tools {
+        display: flex;
+        gap: .5rem;
+        margin-top: .5rem;
+        flex-wrap: wrap;
+    }
+    .map-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .35rem .7rem;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1e3a8a;
+        font-size: .85rem;
+        border: 1px solid #c7d2fe;
+        cursor: pointer;
+    }
+    .map-chip:hover { background:#dbeafe; }
     .map-search-box {
         position: relative;
         margin-bottom: 0.6rem;
@@ -544,12 +566,28 @@
                         <label class="field-label">Buscar tu vivienda en el mapa</label>
                         <div class="map-search-box">
                             <input type="text" id="buscarVivienda" class="form-control"
-                                   placeholder="Ej. Jr. Los Rosales 123, El Tambo" aria-label="Buscar direccion de entrega"
+                                   placeholder="Escríbe una calle, urbanización o barrio de Huancayo" aria-label="Buscar direccion de entrega"
+                                   autocomplete="street-address"
+                                   oninput="programarBusqueda()"
                                    onkeydown="if(event.key==='Enter'){event.preventDefault();buscarVivienda();}">
                             <button type="button" class="btn-mapa-buscar" onclick="buscarVivienda()">
                                 <i class="fas fa-search me-1"></i>Buscar
                             </button>
                             <div id="resultadosBusqueda" class="map-sugerencias"></div>
+                        </div>
+                        <div class="map-tools">
+                            <button type="button" class="map-chip" onclick="usarMiUbicacion()">
+                                <i class="fas fa-location-crosshairs"></i>Mi ubicación
+                            </button>
+                            <button type="button" class="map-chip" onclick="zoomFuerte()">
+                                <i class="fas fa-magnifying-glass-plus"></i>Acercar
+                            </button>
+                            <button type="button" class="map-chip" onclick="limpiarBusqueda()">
+                                <i class="fas fa-rotate-left"></i>Limpiar
+                            </button>
+                            <small class="text-muted w-100 mt-1">
+                                Escribe y el mapa buscará sugerencias; puedes elegir cualquier resultado o tocar el mapa.
+                            </small>
                         </div>
                         <div id="mapaDomicilio" class="mapa-frame entregas" role="region" aria-label="Mapa de entrega a domicilio"></div>
 
@@ -728,25 +766,37 @@ function actualizarEnvios() {
 // ============================================
 // BUSCAR VIVIENDA EN EL MAPA (Nominatim/OSM)
 // ============================================
+var timerBusquedaMapa = null;
+function programarBusqueda() {
+    clearTimeout(timerBusquedaMapa);
+    timerBusquedaMapa = setTimeout(function() {
+        buscarVivienda();
+    }, 450);
+}
+
 function buscarVivienda() {
     var query = document.getElementById('buscarVivienda').value.trim();
     var contenedor = document.getElementById('resultadosBusqueda');
-    if (!query) return;
+    if (!query) {
+        contenedor.classList.remove('show');
+        return;
+    }
 
     contenedor.innerHTML = '<div class="map-sin-resultado">Buscando...</div>';
     contenedor.classList.add('show');
 
-    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=pe&q=' + encodeURIComponent(query))
+    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=8&countrycodes=pe&addressdetails=1&q=' + encodeURIComponent(query))
         .then(function(resp) { return resp.json(); })
         .then(function(resultados) {
             if (!resultados || resultados.length === 0) {
-                contenedor.innerHTML = '<div class="map-sin-resultado">No se encontraron resultados. Revisa la dirección.</div>';
+                contenedor.innerHTML = '<div class="map-sin-resultado">No se encontraron resultados. Prueba con Jr., Av., urb. o el nombre de un establecimiento.</div>';
                 return;
             }
             var html = '';
             resultados.forEach(function(r) {
                 var nombre = (r.display_name || '').replace(/'/g, "\\'");
-                html += '<div class="map-sugerencia-item" onclick="seleccionarLugar(' + parseFloat(r.lat) + ', ' + parseFloat(r.lon) + ', \'' + nombre + '\')">'
+                html += '<div class="map-sugerencia-item" tabindex="0" onclick="seleccionarLugar('
+                        + parseFloat(r.lat) + ', ' + parseFloat(r.lon) + ', \'' + nombre + '\')">'
                         + '<i class="fas fa-map-pin me-1 text-danger"></i>' + r.display_name + '</div>';
             });
             contenedor.innerHTML = html;
@@ -754,6 +804,40 @@ function buscarVivienda() {
         .catch(function() {
             contenedor.innerHTML = '<div class="map-sin-resultado">Error al buscar. Intenta nuevamente.</div>';
         });
+}
+
+function usarMiUbicacion() {
+    if (!navigator.geolocation) {
+        Swal.fire('No disponible', 'Tu navegador no soporta geolocalización', 'info');
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(function(pos) {
+        var lat = pos.coords.latitude;
+        var lon = pos.coords.longitude;
+        colocarMarcadorDomicilio(lat, lon);
+        obtenerDireccionDesdeCoordenadas(lat, lon);
+        if (mapaDomicilio) mapaDomicilio.setView([lat, lon], 17);
+    }, function() {
+        Swal.fire('Ubicación', 'No pudimos acceder a tu ubicación. Busca la dirección manualmente.', 'warning');
+    }, { enableHighAccuracy: true, timeout: 8000 });
+}
+
+function zoomFuerte() {
+    if (mapaDomicilio && marcadorDomicilio) {
+        mapaDomicilio.setView(marcadorDomicilio.getLatLng(), 18);
+    }
+}
+
+function limpiarBusqueda() {
+    document.getElementById('buscarVivienda').value = '';
+    document.getElementById('resultadosBusqueda').classList.remove('show');
+    document.getElementById('direccionEntrega').value = '';
+    if (marcadorDomicilio && mapaDomicilio) {
+        mapaDomicilio.removeLayer(marcadorDomicilio);
+        marcadorDomicilio = null;
+    }
+    localStorage.removeItem('direccionEntrega');
+    localStorage.removeItem('mapaLatLng');
 }
 
 // ============================================
@@ -782,23 +866,15 @@ function initMapaTienda() {
     var el = document.getElementById('mapaTienda');
     if (!el || mapaTienda) return;
 
-    mapaTienda = L.map('mapaTienda').setView([-12.046374, -77.042793], 15);
+    var tiendaLat = -12.045765;
+    var tiendaLon = -75.214802;
+    mapaTienda = L.map('mapaTienda').setView([tiendaLat, tiendaLon], 17);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(mapaTienda);
-    L.marker([-12.046374, -77.042793]).addTo(mapaTienda)
-        .bindPopup('<strong>Librería Salesiana Huancayo</strong><br>Jr. Santa Rosa N° 299, El Tambo, Huancayo')
+    L.marker([tiendaLat, tiendaLon]).addTo(mapaTienda)
+        .bindPopup('<strong>Librería Salesiana Huancayo</strong><br>Jr. Santa Rosa N° 299, El Tambo, Huancayo<br><small>Horario: Mañanas 9:00 am - 1:00 pm, Tardes 4:00 pm - 7:00 pm</small>')
         .openPopup();
-
-    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=pe&q=' + encodeURIComponent('Jr. Santa Rosa N° 299, El Tambo, Huancayo, Peru'))
-        .then(function(resp) { return resp.json(); })
-        .then(function(resultados) {
-            if (resultados && resultados.length > 0) {
-                var r = resultados[0];
-                mapaTienda.setView([parseFloat(r.lat), parseFloat(r.lon)], 16);
-            }
-        })
-        .catch(function() {});
 }
 
 // ============================================
@@ -808,7 +884,7 @@ function initMapaDomicilio() {
     var el = document.getElementById('mapaDomicilio');
     if (!el || mapaDomicilio) return;
 
-    mapaDomicilio = L.map('mapaDomicilio').setView([-12.046374, -77.042793], 12);
+    mapaDomicilio = L.map('mapaDomicilio').setView([-12.045765, -75.214802], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(mapaDomicilio);
@@ -819,7 +895,14 @@ function initMapaDomicilio() {
     });
 
     var direccionGuardada = document.getElementById('direccionEntrega').value.trim();
-    if (direccionGuardada) {
+    var coordsGuardadas = '';
+    try { coordsGuardadas = localStorage.getItem('mapaLatLng') || ''; } catch (e) {}
+    if (coordsGuardadas) {
+        var partes = coordsGuardadas.split(',');
+        if (partes.length === 2) {
+            colocarMarcadorDomicilio(parseFloat(partes[0]), parseFloat(partes[1]));
+        }
+    } else if (direccionGuardada) {
         buscaCoordenadasDireccion(direccionGuardada);
     }
 }
@@ -842,6 +925,9 @@ function colocarMarcadorDomicilio(lat, lon) {
     }
 
     mapaDomicilio.setView([lat, lon], 17);
+    try {
+        localStorage.setItem('mapaLatLng', lat + ',' + lon);
+    } catch (e) {}
     marcadorDomicilio.openPopup();
 }
 
@@ -849,15 +935,24 @@ function colocarMarcadorDomicilio(lat, lon) {
 // OBTENER DIRECCIÓN DESDE COORDENADAS
 // ============================================
 function obtenerDireccionDesdeCoordenadas(lat, lon) {
-    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lon)
+    var input = document.getElementById('direccionEntrega');
+    input.value = 'Buscando dirección...';
+    fetch('https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&lat=' + lat + '&lon=' + lon)
         .then(function(resp) { return resp.json(); })
         .then(function(data) {
             if (data && data.display_name) {
-                document.getElementById('direccionEntrega').value = data.display_name;
+                input.value = data.display_name;
                 direccionMarcada = true;
+                localStorage.setItem('direccionEntrega', input.value);
+                localStorage.setItem('mapaLatLng', lat + ',' + lon);
+            } else {
+                input.value = lat.toFixed(6) + ', ' + lon.toFixed(6);
             }
+            actualizarEnvios();
         })
-        .catch(function() {});
+        .catch(function() {
+            input.value = lat.toFixed(6) + ', ' + lon.toFixed(6);
+        });
 }
 
 // ============================================

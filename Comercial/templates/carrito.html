@@ -509,14 +509,27 @@
                                 </div>
                             </div>
                         </div>
+                                                <div id="infoRecojo" class="border rounded-3 mt-3 p-3 bg-light" style="display:block;">
+                            <h6 class="mb-1 fw-bold"><i class="fas fa-store me-2"></i>Recojo en tienda</h6>
+                            <div class="small">Jr. Santa Rosa N. 299, El Tambo, Huancayo</div>
+                            <div class="small">Horario: mañanas 9:00 am - 1:00 pm y tardes 4:00 pm - 7:00 pm</div>
+                            <a target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Jr.+Santa+Rosa+299%2C+El+Tambo%2C+Huancayo" class="btn btn-sm btn-outline-primary mt-2 rounded-pill">
+                                <i class="fas fa-map-location-dot me-1"></i>Ver ubicación
+                            </a>
+                        
+                            <div id="mapaRecojo" class="mt-2 rounded border" style="height: 170px; background:#eef2ff;"></div>
+</div>
                         <div id="direccionEntrega" class="mt-3" style="display: none;">
                             <textarea id="direccion" class="form-control" rows="2"
-                                placeholder="📍 Calle, número, urbanización, referencia"></textarea>
-                            <small id="direccionAyuda" class="text-muted"></small>
-                            <small class="text-muted d-block mt-1">* Tiempo de entrega: 3-5 días hábiles</small>
-                        </div>
-                    </div>
+                                placeholder="Calle, numero, urbanizacion, referencia"
+                                oninput="try{localStorage.setItem('direccionEntrega', this.value);}catch(e){}; if(typeof actualizarLinkMapa==='function') actualizarLinkMapa(this.value);"></textarea>
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-1">
+                                <small id="direccionAyuda" class="text-muted"></small>
+                            </div>
 
+                    <a href="/catalogo" class="btn btn-outline-secondary w-100 mt-2 py-2 rounded-pill">
+                        <i class="fas fa-store me-2"></i>Seguir comprando en tienda
+                    </a>
                     <button class="btn btn-oro w-100 mt-2 py-2" onclick="irACheckout()">
                         <i class="fas fa-arrow-right me-2"></i>Continuar con la compra
                     </button>
@@ -526,7 +539,9 @@
     </div>
 </div>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     // ===============================
     // VARIABLES GLOBALES
@@ -625,12 +640,15 @@
         const direccionDiv = document.getElementById('direccionEntrega');
         const envioTexto = document.getElementById('envioTexto');
         const direccionInput = document.getElementById('direccion');
+        const recojoInfo = document.getElementById('infoRecojo');
 
         if (tipo === 'delivery') {
+            if (recojoInfo) recojoInfo.style.display = 'none';
             direccionDiv.style.display = 'block';
             envioTexto.innerHTML = 'S/. 5.00';
             cargarDireccionCliente();
         } else {
+            if (recojoInfo) recojoInfo.style.display = 'block';
             direccionDiv.style.display = 'none';
             envioTexto.innerHTML = 'Gratis';
             if (direccionInput) direccionInput.value = '';
@@ -668,16 +686,9 @@
         }
 
         if (tipoEntregaSeleccionado === 'delivery') {
-            let direccion = document.getElementById('direccion')?.value.trim();
-            if (!direccion) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Dirección requerida',
-                    text: 'Ingresa tu dirección de entrega'
-                });
-                return;
-            }
+            let direccion = (document.getElementById('direccion')?.value || '').trim();
             direccionEntrega = direccion;
+            try { localStorage.setItem('direccionEntrega', direccion); } catch (e) { }
         } else {
             direccionEntrega = '';
         }
@@ -830,6 +841,18 @@
         
         renderizarCarrito();
     }
+    setTimeout(function initMapaRecojoCarritoInitial(){ if (document.getElementById("mapaRecojo") && typeof iniciarMapaRecojo === "function" && (tipoEntregaSeleccionado === "recojo")) iniciarMapaRecojo(); }, 300);
+    setTimeout(function(){
+  var container = document.getElementById("mapaRecojo");
+  if (!container) return;
+  if (!window._mapaRecojo) {
+    window._mapaRecojo = L.map("mapaRecojo").setView([-12.045765, -75.214802], 16);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "" }).addTo(window._mapaRecojo);
+    L.marker([-12.045765, -75.214802]).addTo(window._mapaRecojo).bindPopup("<strong>Libreria Salesiana</strong><br>Jr. Santa Rosa N. 299, El Tambo, Huancayo").openPopup();
+  } else {
+    window._mapaRecojo.invalidateSize();
+  }
+}, 200);
 
     // ===============================
     // ELIMINAR PRODUCTO
@@ -947,10 +970,8 @@
         
         // Cargar tipo de entrega guardado
         let tipoGuardado = localStorage.getItem('tipoEntrega');
-        if (tipoGuardado) {
-            tipoEntregaSeleccionado = tipoGuardado;
-            seleccionarEntrega(tipoEntregaSeleccionado);
-        }
+        tipoEntregaSeleccionado = tipoGuardado || 'recojo';
+        seleccionarEntrega(tipoEntregaSeleccionado);
         
         // Cargar dirección guardada
         let direccionGuardada = localStorage.getItem('direccionEntrega');
@@ -1005,14 +1026,30 @@
             localStorage.setItem('carritoCliente', JSON.stringify(carrito));
         }
         
-        // Renderizar el carrito
+    var mapaRecojo = null;
+    function iniciarMapaRecojo() {
+        var el = document.getElementById('mapaRecojo');
+        if (!el) return;
+        if (mapaRecojo) { mapaRecojo.invalidateSize(); return; }
+        mapaRecojo = L.map('mapaRecojo').setView([-12.045765, -75.214802], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(mapaRecojo);
+        L.marker([-12.045765, -75.214802]).addTo(mapaRecojo).bindPopup('<strong>Librería Salesiana</strong><br>Jr. Santa Rosa N° 299, El Tambo, Huancayo').openPopup();
+    }
+
+    // Renderizar el carrito
         renderizarCarrito();
     }
 
     // ===============================
     // ESCAPE HTML
     // ===============================
-    function escapeHtml(t) {
+    function actualizarLinkMapa(texto) {
+        const link = document.getElementById('btnVerEnMapa');
+        if (!link) return;
+        const q = encodeURIComponent(texto || '');
+        link.href = q ? 'https://www.google.com/maps/search/?api=1&query=' + q : '#';
+    }
+function escapeHtml(t) {
         if (!t) return '';
         return t.replace(/[&<>]/g, function (m) {
             if (m === '&') return '&amp;';
@@ -1042,3 +1079,4 @@
     });
 </script>
 {% endblock %}
+    function initCartStoreMap() { if (document.getElementById("mapaRecojo") && typeof iniciarMapaRecojo === "function") iniciarMapaRecojo(); }

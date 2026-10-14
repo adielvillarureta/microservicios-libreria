@@ -126,7 +126,7 @@ def crear_pedido():
             db.session.flush()
         except IntegrityError:
             db.session.rollback()
-            cliente = Cliente.query.filter_by(email=email).first()
+            cliente = Cliente.query.filter_by(correo=email).first()
             if not cliente:
                 cliente = Cliente.query.filter(Cliente.correo.ilike(email)).first()
 

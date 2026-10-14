@@ -18,12 +18,15 @@
                     y el servicio que nos caracteriza desde hace más de un siglo.</p>
 
                 <div class="hero-busqueda mb-4">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="search" id="busquedaHero" class="form-control"
-                               placeholder="Busca tu libro, biblia o artículo religioso..." autocomplete="off"
-                               onkeydown="if(event.key==='Enter'){buscarDesdeHero();return false;}">
-                        <button class="btn" type="button" onclick="buscarDesdeHero()"><i class="fas fa-arrow-right me-1 d-none d-sm-inline"></i>Buscar</button>
+                    <div class="d-flex align-items-center gap-2 flex-column flex-md-row justify-content-center">
+                        <a href="#filtrosCatalogo" data-bs-toggle="offcanvas" data-bs-target="#filtrosCatalogo"
+                           class="btn btn-gold btn-lg rounded-pill px-4">
+                            <i class="fas fa-sliders-h me-2"></i>Filtros
+                        </a>
+                        <a href="#productosGrid" class="btn btn-outline-light btn-lg rounded-pill px-4"
+                           onclick="document.getElementById('productosGrid').scrollIntoView({behavior:'smooth'})">
+                            <i class="fas fa-store me-2"></i>Ver productos
+                        </a>
                     </div>
                 </div>
 
@@ -107,23 +110,54 @@
     </div>
 </section>
 
+<style>
+    .filtros-sticky {
+        position: sticky;
+        top: 90px;
+        max-height: calc(100vh - 110px);
+        overflow-y: auto;
+        z-index: 5;
+        overscroll-behavior: contain;
+        box-shadow: 0 12px 30px rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    .offcanvas-body { overscroll-behavior: contain; }
+    .filtros-sticky .card-header { border-radius: 1rem 1rem 0 0; }
+    .filtros-sticky .card-footer { border-radius: 0 0 1rem 1rem; }
+    @media (max-width: 767px) {
+        .offcanvas-start { width: 88vw; }
+    }
+</style>
+<section id="destacadosTemporada" class="container mt-3 mb-2" style="display:none;">
+    <div class="card border-0 rounded-4 shadow-sm mb-3">
+        <div class="card-body py-3">
+            <h5 class="mb-0 fw-bold"><i class="fas fa-seedling me-2 text-gold"></i>Temporada destacada</h5>
+            <div class="row g-2 mt-2" id="destacadosGrid"></div>
+        </div>
+    </div>
+</section>
+<div class="d-md-none px-3 pt-2 pb-1">
+    <button class="btn btn-gold w-100 rounded-pill mb-2" data-bs-toggle="offcanvas" data-bs-target="#filtrosCatalogo" aria-controls="filtrosCatalogo">
+        <i class="fas fa-sliders-h me-2"></i>Filtros y búsqueda
+    </button>
+</div>
 <div class="container-fluid py-3 py-md-4">
     <div class="row">
-        <!-- Panel de Filtros - Lado Izquierdo -->
+        <!-- Panel de Filtros - Fijo en desktop, drawer en móvil -->
         <div class="col-12 col-md-3 mb-4">
-            <div class="card shadow-lg border-0 rounded-4">
+            <div class="offcanvas-md offcanvas-start filtros-scroll-wrap" tabindex="-1" id="filtrosCatalogo" aria-labelledby="filtrosLabel">
+                <div class="offcanvas-header d-md-none">
+                    <h5 class="offcanvas-title" id="filtrosLabel"><i class="fas fa-sliders-h me-2 text-gold"></i>Filtros</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#filtrosCatalogo" aria-label="Cerrar"></button>
+                </div>
+                <div class="offcanvas-body p-md-0">
+                    <div class="card shadow-lg border-0 rounded-4 filtros-sticky">
                 <div class="card-header bg-gradient-primary text-white rounded-top-4 py-3">
                     <h6 class="mb-0 fw-bold"><i class="fas fa-sliders-h me-2"></i>Filtrar Productos</h6>
                 </div>
                 <div class="card-body p-3">
-                    <!-- Búsqueda por nombre -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small text-uppercase text-muted">
-                            <i class="fas fa-search me-1" style="color: var(--salesiano-gold);"></i> Buscar
-                        </label>
-                        <input type="text" id="filtroBuscar" class="form-control form-control-sm rounded-pill" 
-                               placeholder="🔍 Nombre del producto..." onkeyup="if(event.key==='Enter') aplicarFiltros();">
-                    </div>
+                    <!-- Búsqueda única: proviene del buscador global -->
+                    <input type="hidden" id="filtroBuscar" value="">
                     
                     <!-- Filtro por categoría -->
                     <div class="mb-3">
@@ -223,8 +257,10 @@
                     <h6 class="fw-bold mb-1 text-dark">¡Envíos a domicilio!</h6>
                     <small class="text-dark">Recibe tus pedidos en casa</small>
                 </div>
-            </div>
-        </div>
+            </div> <!-- card -->
+                </div> <!-- offcanvas body -->
+            </div> <!-- offcanvas -->
+        </div> <!-- col -->
         
         <!-- Productos - Lado Derecho -->
         <div class="col-12 col-md-9">
@@ -249,6 +285,8 @@
                     <p class="mt-3 text-muted">Cargando productos...</p>
                 </div>
             </div>
+            <div id="paginacionCatalogo" class="col-12 mt-2 d-flex justify-content-center"></div>
+</div>
         </div>
     </div>
 </div>
@@ -270,6 +308,7 @@ function cargarProductos() {
         .then(function(data) {
             productosOriginal = data;
             productosFiltrados = data;
+            renderizarDestacados((data || []).filter(function(p){return p.destacado;}).slice(0,4));
             mostrarProductos(productosFiltrados);
             if (window.filtroInicialPendiente) {
                 window.filtroInicialPendiente = false;
@@ -284,8 +323,58 @@ function cargarProductos() {
 // ===============================
 // MOSTRAR PRODUCTOS
 // ===============================
-function mostrarProductos(productos) {
+function renderizarDestacados(items) {
+    var sec = document.getElementById('destacadosTemporada');
+    var grid = document.getElementById('destacadosGrid');
+    if (!sec || !grid) return;
+    if (!items || items.length === 0) { sec.style.display = 'none'; return; }
+    sec.style.display = '';
+    var h = '';
+    items.forEach(function(p) {
+        var precio = p.precio_oferta ? p.precio_oferta : p.precio;
+        h += '<div class="col-6 col-md-3"><div class="card h-100 border-0 shadow-sm rounded-3"><div class="card-body p-2 p-md-3 text-center"><img src="' + (p.imagen_url || '/static/img/default-product.png') + '" class="img-fluid rounded mb-2" style="max-height:84px;object-fit:contain" alt="' + escapeHtml(p.nombre) + '"><div class="fw-bold small">' + escapeHtml(p.nombre.substring(0,38)) + '</div><div class="text-danger fw-bold mt-1">S/. ' + (precio||0).toFixed(2) + '</div><button class="btn btn-gold btn-sm rounded-pill w-100 mt-2" onclick="agregarAlCarrito(' + p.id + ',\'' + escapeHtml(p.nombre) + '\', ' + precio + ', ' + (p.cantidad||1) + ')">Agregar</button></div></div></div>';
+    });
+    grid.innerHTML = h;
+}
+
+var porPaginaCatalogo = 12;
+var paginaCatalogoActual = 1;
+var productosRenderCatalogo = [];
+function mostrarProductos(productos) { productosRenderCatalogo = (productos || []); paginaCatalogoActual = 1; renderizarPaginaCatalogo(); }
+function renderizarPaginaCatalogo() {
     var grid = document.getElementById('productosGrid');
+    var contador = document.getElementById('contadorProductos');
+    var productos = productosRenderCatalogo || [];
+    if (!productos || productos.length === 0) {
+        grid.innerHTML = '<div class="col-12 text-center py-5"><i class="fas fa-box-open fa-5x text-muted mb-4 opacity-50"></i><h5 class="text-muted">No hay productos que coincidan</h5><p class="text-muted small">Prueba con otros filtros</p></div>';
+        if (contador) contador.innerHTML = '<i class="fas fa-box me-1"></i> 0 productos';
+        var pc = document.getElementById('paginacionCatalogo'); if (pc) pc.innerHTML = '';
+        return;
+    }
+    var total = productos.length;
+    var totalPaginas = Math.max(1, Math.ceil(total / porPaginaCatalogo));
+    if (paginaCatalogoActual > totalPaginas) paginaCatalogoActual = totalPaginas;
+    if (paginaCatalogoActual < 1) paginaCatalogoActual = 1;
+    var inicio = (paginaCatalogoActual - 1) * porPaginaCatalogo;
+    var paginaItems = productos.slice(inicio, inicio + porPaginaCatalogo);
+    renderizarCardsCatalogo(paginaItems, grid);
+    if (contador) contador.innerHTML = '<i class="fas fa-box me-1"></i> ' + total + ' producto' + (total !== 1 ? 's' : '');
+    var pc = document.getElementById('paginacionCatalogo');
+    if (pc) {
+        if (totalPaginas <= 1) { pc.innerHTML = ''; }
+        else {
+            var h = '<nav aria-label="Paginacion" class="d-flex justify-content-center mt-3"><ul class="pagination pagination-sm">';
+            for (var i = 1; i <= totalPaginas; i++) {
+                var active = i === paginaCatalogoActual ? ' active' : '';
+                h += '<li class="page-item' + active + '"><a class="page-link" href="#" onclick="cambiarPaginaCatalogo(' + i + ');return false;">' + i + '</a></li>';
+            }
+            h += '</ul></nav>';
+            pc.innerHTML = h;
+        }
+    }
+}
+function renderizarCardsCatalogo(productos, grid) {
+
     var contador = document.getElementById('contadorProductos');
     
     if (!productos || productos.length === 0) {
@@ -494,7 +583,6 @@ function filtrarPorCategoria(categoriaId) {
     }
     
     // Scroll al inicio de los productos
-    var grid = document.getElementById('productosGrid');
     if (grid) {
         grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -573,8 +661,10 @@ function limpiarFiltros() {
 // EVENT LISTENERS
 // ===============================
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('btnAplicarFiltros').addEventListener('click', aplicarFiltros);
-    document.getElementById('btnLimpiarFiltros').addEventListener('click', limpiarFiltros);
+    var btnAplicar = document.getElementById('btnAplicarFiltros');
+    if (btnAplicar) btnAplicar.addEventListener('click', aplicarFiltros);
+    var btnLimpiar = document.getElementById('btnLimpiarFiltros');
+    if (btnLimpiar) btnLimpiar.addEventListener('click', limpiarFiltros);
 
     var params = new URLSearchParams(window.location.search);
     var qInicial = params.get('q');
@@ -901,7 +991,6 @@ function buscarDesdeHero() {
     var filtro = document.getElementById('filtroBuscar');
     if (filtro && txt) { filtro.value = txt; }
     if (typeof aplicarFiltros === 'function') { aplicarFiltros(); }
-    var grid = document.getElementById('productosGrid');
     if (grid) { grid.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 }
 

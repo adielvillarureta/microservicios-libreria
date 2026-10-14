@@ -35,7 +35,7 @@ def _config_social():
 
 
 def _obtener_o_crear_cliente_social(info):
-    cliente = Cliente.query.filter_by(email=info['email']).first()
+    cliente = Cliente.query.filter_by(correo=info['email']).first()
     creado = False
     if not cliente:
         try:
@@ -50,7 +50,7 @@ def _obtener_o_crear_cliente_social(info):
             creado = True
         except IntegrityError:
             db.session.rollback()
-            cliente = Cliente.query.filter_by(email=(info['email'] or '').strip().lower()).first()
+            cliente = Cliente.query.filter_by(correo=(info['email'] or '').strip().lower()).first()
             if not cliente:
                 cliente = Cliente.query.filter(Cliente.correo.ilike((info['email'] or '').strip())).first()
             creado = False
@@ -187,7 +187,7 @@ def login_cliente():
             return render_template("login_cliente.html", **template_data)
 
         if verificar_bloqueo_email(email):
-            cliente_tmp = Cliente.query.filter_by(email=email).first()
+            cliente_tmp = Cliente.query.filter_by(correo=email).first()
             if cliente_tmp:
                 bloqueo_permanente = _bloqueo_permanente(cliente_tmp)
                 if bloqueo_permanente:
@@ -417,7 +417,7 @@ def cliente_actualizar_perfil():
 
         nuevo_email = request.form.get("email")
         if nuevo_email and nuevo_email != cliente.email:
-            existe = Cliente.query.filter_by(email=nuevo_email).first()
+            existe = Cliente.query.filter_by(correo=nuevo_email).first()
             if existe:
                 flash("El correo ya está registrado por otro usuario", "danger")
                 return redirect(url_for("cliente.cliente_perfil"))
